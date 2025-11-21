@@ -14,13 +14,19 @@ if os.path.exists('instance/financas.db'):
     print("🗑️  Banco antigo removido")
 
 # Agora importar e criar
-from app import app, db, User, Familia, Receita, DespesaFixa
-import secrets
+from app import create_app, db
+from app.models import User, Familia, Receita, DespesaFixa, DespesaVariavel, ReservaEmergencia, MetaCategoria
+
+app = create_app()
 
 with app.app_context():
-    # Criar todas as tabelas
+    print("Apagando banco de dados antigo...")
+    db.drop_all()
+    
+    print("Criando novas tabelas...")
     db.create_all()
-    print("✅ Banco de dados criado com estrutura nova!")
+    
+    print("Banco de dados recriado com sucesso!")
     
     # Criar família primeiro
     familia = Familia(
