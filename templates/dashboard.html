@@ -1,0 +1,397 @@
+{% extends "base.html" %}
+
+{% block title %}Dashboard - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <div class="mb-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Dashboard Financeiro</h2>
+        <p class="text-sm md:text-base text-gray-600">Visão geral das suas finanças</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <select id="mes-select" class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+        </select>
+        <select id="ano-select" class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+        </select>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-4 md:p-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300">
+        <div class="flex items-center justify-between text-white">
+            <div>
+                <p class="text-white/80 text-xs md:text-sm font-medium">Receitas</p>
+                <p class="text-lg md:text-2xl font-bold" id="receitas">R$ 0,00</p>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                <i class="fas fa-arrow-up text-2xl md:text-3xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-red-500 to-rose-600 p-4 md:p-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300">
+        <div class="flex items-center justify-between text-white">
+            <div>
+                <p class="text-white/80 text-xs md:text-sm font-medium">Despesas Fixas</p>
+                <p class="text-lg md:text-2xl font-bold" id="despesas-fixas">R$ 0,00</p>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                <i class="fas fa-arrow-down text-2xl md:text-3xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-orange-500 to-amber-600 p-4 md:p-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300">
+        <div class="flex items-center justify-between text-white">
+            <div>
+                <p class="text-white/80 text-xs md:text-sm font-medium">Gastos Variáveis</p>
+                <p class="text-lg md:text-2xl font-bold" id="despesas-variaveis">R$ 0,00</p>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                <i class="fas fa-shopping-cart text-2xl md:text-3xl"></i>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-gradient-to-br from-blue-500 to-indigo-600 p-4 md:p-6 rounded-2xl shadow-2xl transform hover:scale-105 transition-all duration-300">
+        <div class="flex items-center justify-between text-white">
+            <div>
+                <p class="text-white/80 text-xs md:text-sm font-medium">Saldo Disponível</p>
+                <p class="text-lg md:text-2xl font-bold" id="saldo">R$ 0,00</p>
+            </div>
+            <div class="bg-white/20 backdrop-blur-sm p-3 rounded-xl">
+                <i class="fas fa-wallet text-2xl md:text-3xl"></i>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50">
+        <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            📊 Distribuição de Despesas
+        </h3>
+        <canvas id="despesasChart"></canvas>
+    </div>
+    
+    <div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50">
+        <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4">
+            💹 Receitas vs Despesas
+        </h3>
+        <canvas id="receitasDespesasChart"></canvas>
+    </div>
+</div>
+
+<div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50 mb-6 md:mb-8">
+    <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-4 flex items-center gap-2">
+        <span class="text-2xl">📈</span>
+        Evolução Anual
+    </h3>
+    <div class="overflow-x-auto">
+        <canvas id="evolucaoChart"></canvas>
+    </div>
+</div>
+
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div class="bg-gradient-to-br from-green-500 to-emerald-600 p-4 md:p-6 rounded-2xl shadow-2xl text-white">
+        <h3 class="text-lg md:text-xl font-bold mb-4 flex items-center gap-2">
+            <span class="bg-white/20 backdrop-blur-sm p-2 rounded-lg">🏦</span>
+            Reserva de Emergência
+        </h3>
+        <div class="flex flex-col sm:flex-row items-start sm:items-center justify-between mb-4 gap-3">
+            <div>
+                <p class="text-white/80 text-sm font-medium">💰 Total Guardado</p>
+                <p class="text-2xl md:text-3xl font-bold" id="reserva">R$ 0,00</p>
+            </div>
+            <div class="sm:text-right">
+                <p class="text-white/80 text-sm font-medium">🎯 Meta</p>
+                <p class="text-xl md:text-2xl font-bold">R$ {{ "%.2f"|format(meta_reserva) }}</p>
+            </div>
+        </div>
+        <div class="w-full bg-white/20 backdrop-blur-sm rounded-full h-6 overflow-hidden">
+            <div id="progress-bar" class="bg-gradient-to-r from-yellow-400 to-orange-400 h-6 rounded-full transition-all shadow-lg" style="width: 0%"></div>
+        </div>
+        <p class="text-center text-white/90 mt-2 text-sm font-medium">
+            <span id="percentual">0</span>% da meta atingida 🚀
+        </p>
+    </div>
+    
+    <div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50">
+        <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-4 flex items-center gap-2">
+            <span class="text-2xl">👥</span>
+            Gastos por Pessoa (Mês Atual)
+        </h3>
+        <div id="gastos-por-pessoa" class="space-y-3"></div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script>
+let mesAtual = new Date().getMonth() + 1;
+let anoAtual = new Date().getFullYear();
+let despesasChart = null;
+let receitasDespesasChart = null;
+let evolucaoChart = null;
+let metaReserva = {{ meta_reserva }};
+
+function formatMoney(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+async function loadDashboard() {
+    const mes = document.getElementById('mes-select').value;
+    const ano = document.getElementById('ano-select').value;
+    
+    const response = await fetch(`/api/dashboard-data?mes=${mes}&ano=${ano}`);
+    const data = await response.json();
+    
+    document.getElementById('receitas').textContent = formatMoney(data.receitas);
+    document.getElementById('despesas-fixas').textContent = formatMoney(data.despesas_fixas);
+    document.getElementById('despesas-variaveis').textContent = formatMoney(data.despesas_variaveis);
+    document.getElementById('saldo').textContent = formatMoney(data.saldo_disponivel);
+    document.getElementById('reserva').textContent = formatMoney(data.reserva_emergencia);
+    
+    const percentual = (data.reserva_emergencia / metaReserva * 100).toFixed(1);
+    document.getElementById('percentual').textContent = percentual;
+    document.getElementById('progress-bar').style.width = Math.min(percentual, 100) + '%';
+    
+    // Gastos por pessoa
+    const gastosPorPessoa = document.getElementById('gastos-por-pessoa');
+    gastosPorPessoa.innerHTML = '';
+    
+    if (data.gastos_por_usuario && data.gastos_por_usuario.length > 0) {
+        const totalGastos = data.gastos_por_usuario.reduce((sum, u) => sum + u.total, 0);
+        
+        data.gastos_por_usuario.forEach(u => {
+            const percentual = totalGastos > 0 ? ((u.total / totalGastos) * 100).toFixed(1) : 0;
+            gastosPorPessoa.innerHTML += `
+                <div class="flex justify-between items-center p-3 bg-gradient-to-r from-orange-50 to-amber-50 rounded-xl border border-orange-200/50 hover:shadow-md transition-all">
+                    <div>
+                        <span class="font-bold text-gray-800">👤 ${u.nome}</span>
+                        <span class="text-sm text-orange-600 ml-2 font-medium">(${percentual}%)</span>
+                    </div>
+                    <span class="text-orange-600 font-bold text-lg">${formatMoney(u.total)}</span>
+                </div>
+            `;
+        });
+    } else {
+        gastosPorPessoa.innerHTML = `
+            <div class="text-center py-8">
+                <div class="text-6xl mb-3">🛒</div>
+                <p class="text-gray-500 font-medium">Nenhum gasto registrado neste mês</p>
+                <p class="text-sm text-gray-400 mt-2">Vá em "Gastos Diários" para adicionar</p>
+            </div>
+        `;
+    }
+    
+    // Atualizar gráficos
+    updateCharts(data);
+    loadEvolucaoAnual();
+}
+
+function updateCharts(data) {
+    // Gráfico de Pizza - Distribuição de Despesas
+    const ctxDespesas = document.getElementById('despesasChart').getContext('2d');
+    
+    if (despesasChart) {
+        despesasChart.destroy();
+    }
+    
+    const totalDespesas = data.despesas_fixas + data.despesas_variaveis;
+    
+    despesasChart = new Chart(ctxDespesas, {
+        type: 'doughnut',
+        data: {
+            labels: ['Despesas Fixas', 'Gastos Variáveis', 'Saldo Disponível'],
+            datasets: [{
+                data: [data.despesas_fixas, data.despesas_variaveis, data.saldo_disponivel],
+                backgroundColor: [
+                    'rgba(239, 68, 68, 0.8)',   // Vermelho
+                    'rgba(249, 115, 22, 0.8)',  // Laranja
+                    'rgba(59, 130, 246, 0.8)'   // Azul
+                ],
+                borderColor: [
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(249, 115, 22, 1)',
+                    'rgba(59, 130, 246, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'bottom',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            const label = context.label || '';
+                            const value = context.parsed || 0;
+                            const percentage = ((value / data.receitas) * 100).toFixed(1);
+                            return label + ': ' + formatMoney(value) + ' (' + percentage + '%)';
+                        }
+                    }
+                }
+            }
+        }
+    });
+    
+    // Gráfico de Barras - Receitas vs Despesas
+    const ctxReceitasDespesas = document.getElementById('receitasDespesasChart').getContext('2d');
+    
+    if (receitasDespesasChart) {
+        receitasDespesasChart.destroy();
+    }
+    
+    receitasDespesasChart = new Chart(ctxReceitasDespesas, {
+        type: 'bar',
+        data: {
+            labels: ['Receitas', 'Despesas Fixas', 'Gastos Variáveis', 'Saldo'],
+            datasets: [{
+                label: 'Valores em R$',
+                data: [data.receitas, data.despesas_fixas, data.despesas_variaveis, data.saldo_disponivel],
+                backgroundColor: [
+                    'rgba(34, 197, 94, 0.8)',   // Verde
+                    'rgba(239, 68, 68, 0.8)',   // Vermelho
+                    'rgba(249, 115, 22, 0.8)',  // Laranja
+                    'rgba(59, 130, 246, 0.8)'   // Azul
+                ],
+                borderColor: [
+                    'rgba(34, 197, 94, 1)',
+                    'rgba(239, 68, 68, 1)',
+                    'rgba(249, 115, 22, 1)',
+                    'rgba(59, 130, 246, 1)'
+                ],
+                borderWidth: 2
+            }]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    display: false
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return formatMoney(context.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+async function loadEvolucaoAnual() {
+    const ano = document.getElementById('ano-select').value;
+    const response = await fetch(`/api/evolucao-mensal?ano=${ano}`);
+    const data = await response.json();
+    
+    const meses = ['Jan', 'Fev', 'Mar', 'Abr', 'Mai', 'Jun', 'Jul', 'Ago', 'Set', 'Out', 'Nov', 'Dez'];
+    
+    const ctxEvolucao = document.getElementById('evolucaoChart').getContext('2d');
+    
+    if (evolucaoChart) {
+        evolucaoChart.destroy();
+    }
+    
+    evolucaoChart = new Chart(ctxEvolucao, {
+        type: 'line',
+        data: {
+            labels: meses,
+            datasets: [
+                {
+                    label: 'Receitas',
+                    data: data.map(d => d.receitas),
+                    borderColor: 'rgba(34, 197, 94, 1)',
+                    backgroundColor: 'rgba(34, 197, 94, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Despesas Totais',
+                    data: data.map(d => d.despesas_fixas + d.despesas_variaveis),
+                    borderColor: 'rgba(239, 68, 68, 1)',
+                    backgroundColor: 'rgba(239, 68, 68, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                },
+                {
+                    label: 'Saldo',
+                    data: data.map(d => d.saldo),
+                    borderColor: 'rgba(59, 130, 246, 1)',
+                    backgroundColor: 'rgba(59, 130, 246, 0.1)',
+                    tension: 0.4,
+                    fill: true
+                }
+            ]
+        },
+        options: {
+            responsive: true,
+            maintainAspectRatio: true,
+            plugins: {
+                legend: {
+                    position: 'top',
+                },
+                tooltip: {
+                    callbacks: {
+                        label: function(context) {
+                            return context.dataset.label + ': ' + formatMoney(context.parsed.y);
+                        }
+                    }
+                }
+            },
+            scales: {
+                y: {
+                    beginAtZero: true,
+                    ticks: {
+                        callback: function(value) {
+                            return 'R$ ' + value.toLocaleString('pt-BR');
+                        }
+                    }
+                }
+            }
+        }
+    });
+}
+
+document.getElementById('mes-select').value = mesAtual;
+document.getElementById('ano-select').value = anoAtual;
+document.getElementById('mes-select').addEventListener('change', loadDashboard);
+document.getElementById('ano-select').addEventListener('change', loadDashboard);
+
+loadDashboard();
+</script>
+{% endblock %}

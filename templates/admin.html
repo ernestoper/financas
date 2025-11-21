@@ -1,0 +1,168 @@
+{% extends "base.html" %}
+
+{% block title %}Painel Admin - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800">🔐 Painel Administrativo</h2>
+            <p class="text-sm md:text-base text-gray-600">Visão geral do sistema</p>
+        </div>
+        <div class="flex gap-3">
+            <a href="/admin/familias" class="bg-blue-600 hover:bg-blue-700 text-white px-4 py-2 rounded text-sm">
+                Ver Famílias
+            </a>
+            <a href="/admin/usuarios" class="bg-green-600 hover:bg-green-700 text-white px-4 py-2 rounded text-sm">
+                Ver Usuários
+            </a>
+        </div>
+    </div>
+</div>
+
+<!-- Cards de Estatísticas -->
+<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg border-l-4 border-blue-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-xs md:text-sm">Total de Famílias</p>
+                <p class="text-2xl md:text-3xl font-bold text-blue-600">{{ total_familias }}</p>
+            </div>
+            <i class="fas fa-users text-blue-600 text-3xl md:text-4xl"></i>
+        </div>
+    </div>
+    
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg border-l-4 border-green-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-xs md:text-sm">Total de Usuários</p>
+                <p class="text-2xl md:text-3xl font-bold text-green-600">{{ total_usuarios }}</p>
+            </div>
+            <i class="fas fa-user text-green-600 text-3xl md:text-4xl"></i>
+        </div>
+    </div>
+    
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg border-l-4 border-purple-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-xs md:text-sm">Usuários/Família</p>
+                <p class="text-2xl md:text-3xl font-bold text-purple-600">{{ "%.1f"|format(usuarios_por_familia) }}</p>
+            </div>
+            <i class="fas fa-chart-line text-purple-600 text-3xl md:text-4xl"></i>
+        </div>
+    </div>
+    
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg border-l-4 border-orange-600">
+        <div class="flex items-center justify-between">
+            <div>
+                <p class="text-gray-600 text-xs md:text-sm">Reserva Total</p>
+                <p class="text-xl md:text-2xl font-bold text-orange-600">R$ {{ "%.2f"|format(total_reserva) }}</p>
+            </div>
+            <i class="fas fa-piggy-bank text-orange-600 text-3xl md:text-4xl"></i>
+        </div>
+    </div>
+</div>
+
+<!-- Distribuição de Planos -->
+<div class="grid grid-cols-1 lg:grid-cols-2 gap-4 md:gap-6 mb-6 md:mb-8">
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+        <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4">Distribuição de Planos</h3>
+        <div class="space-y-4">
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm md:text-base">🆓 Free</span>
+                    <span class="font-bold text-sm md:text-base">{{ familias_free }} famílias</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-gray-600 h-3 rounded-full" style="width: {{ (familias_free / total_familias * 100) if total_familias > 0 else 0 }}%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm md:text-base">💎 Premium</span>
+                    <span class="font-bold text-sm md:text-base">{{ familias_premium }} famílias</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-blue-600 h-3 rounded-full" style="width: {{ (familias_premium / total_familias * 100) if total_familias > 0 else 0 }}%"></div>
+                </div>
+            </div>
+            
+            <div>
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm md:text-base">👑 VIP</span>
+                    <span class="font-bold text-sm md:text-base">{{ familias_vip }} famílias</span>
+                </div>
+                <div class="w-full bg-gray-200 rounded-full h-3">
+                    <div class="bg-purple-600 h-3 rounded-full" style="width: {{ (familias_vip / total_familias * 100) if total_familias > 0 else 0 }}%"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+    
+    <div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+        <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4">Estatísticas Financeiras</h3>
+        <div class="space-y-3">
+            <div class="flex justify-between items-center p-3 bg-green-50 rounded">
+                <span class="text-sm md:text-base">💰 Total Receitas</span>
+                <span class="font-bold text-green-600 text-sm md:text-base">R$ {{ "%.2f"|format(total_receitas) }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-red-50 rounded">
+                <span class="text-sm md:text-base">📉 Total Despesas Fixas</span>
+                <span class="font-bold text-red-600 text-sm md:text-base">R$ {{ "%.2f"|format(total_despesas_fixas) }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-orange-50 rounded">
+                <span class="text-sm md:text-base">🛒 Total Gastos Variáveis</span>
+                <span class="font-bold text-orange-600 text-sm md:text-base">R$ {{ "%.2f"|format(total_despesas_variaveis) }}</span>
+            </div>
+            <div class="flex justify-between items-center p-3 bg-blue-50 rounded">
+                <span class="text-sm md:text-base">🏦 Total em Reserva</span>
+                <span class="font-bold text-blue-600 text-sm md:text-base">R$ {{ "%.2f"|format(total_reserva) }}</span>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Famílias Recentes -->
+<div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+    <h3 class="text-lg md:text-xl font-bold text-gray-800 mb-4">Famílias Recentes (Últimas 10)</h3>
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm md:text-base">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">Nome</th>
+                    <th class="px-4 py-3 text-left hidden sm:table-cell">Código</th>
+                    <th class="px-4 py-3 text-left">Plano</th>
+                    <th class="px-4 py-3 text-left hidden md:table-cell">Criada em</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for familia in familias_recentes %}
+                <tr class="hover:bg-gray-50">
+                    <td class="px-4 py-3">{{ familia.nome }}</td>
+                    <td class="px-4 py-3 font-mono text-xs hidden sm:table-cell">{{ familia.codigo_convite }}</td>
+                    <td class="px-4 py-3">
+                        {% if familia.plano == 'free' %}
+                        <span class="bg-gray-100 text-gray-800 px-2 py-1 rounded text-xs">Free</span>
+                        {% elif familia.plano == 'premium' %}
+                        <span class="bg-blue-100 text-blue-800 px-2 py-1 rounded text-xs">Premium</span>
+                        {% else %}
+                        <span class="bg-purple-100 text-purple-800 px-2 py-1 rounded text-xs">VIP</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-600 text-xs hidden md:table-cell">
+                        {{ familia.created_at.strftime('%d/%m/%Y %H:%M') }}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<div class="mt-6 text-center">
+    <a href="/dashboard" class="text-sm md:text-base text-blue-600 hover:text-blue-800">
+        ← Voltar ao Dashboard
+    </a>
+</div>
+{% endblock %}

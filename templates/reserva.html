@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Reserva de Emergência - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Reserva de Emergência</h2>
+    <p class="text-sm md:text-base text-gray-600">Acompanhe sua jornada para sua meta</p>
+</div>
+
+<div class="bg-gradient-to-br from-green-500 to-emerald-600 p-4 md:p-6 rounded-2xl shadow-2xl mb-6 text-white">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-4">
+        <div>
+            <p class="text-white/80 text-sm font-medium">💰 Total Guardado</p>
+            <p class="text-3xl md:text-4xl font-bold" id="total-reserva">R$ 0,00</p>
+        </div>
+        <div class="sm:text-right">
+            <p class="text-white/80 text-sm font-medium">🎯 Meta</p>
+            <div class="flex items-center gap-2">
+                <p class="text-2xl md:text-3xl font-bold" id="meta-valor">R$ {{
+                    "%.2f"|format(meta_reserva) }}</p>
+                <button onclick="editarMeta()" class="bg-white/20 backdrop-blur-sm hover:bg-white/30 p-2 rounded-lg transition-all">
+                    <i class="fas fa-edit"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+    <div class="w-full bg-white/20 backdrop-blur-sm rounded-full h-8 overflow-hidden">
+        <div id="progress-bar"
+            class="bg-gradient-to-r from-yellow-400 to-orange-400 h-8 rounded-full transition-all flex items-center justify-center text-white text-sm md:text-base font-bold shadow-lg"
+            style="width: 0%">
+            <span id="progress-text">0%</span>
+        </div>
+    </div>
+    <p class="text-center text-white/90 mt-3 text-sm font-medium">
+        <span id="percentual">0</span>% da meta atingida 🚀
+    </p>
+</div>
+
+<!-- Modal Editar Meta -->
+<div id="modal-meta" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl max-w-md w-full">
+        <h3 class="text-xl md:text-2xl font-bold mb-4">Editar Meta de Reserva</h3>
+        <p class="text-sm md:text-base text-gray-600 mb-4">Defina sua meta personalizada de reserva de emergência:</p>
+        <div class="mb-4">
+            <label class="block text-gray-700 text-sm font-bold mb-2">Nova Meta (R$)</label>
+            <input type="number" id="input-nova-meta" step="100" min="1000" value="{{ meta_reserva }}"
+                class="w-full px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        </div>
+        <p class="text-xs md:text-sm text-gray-500 mb-4">
+            💡 Dica: Especialistas recomendam 6 meses de despesas
+        </p>
+        <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+            <button onclick="salvarMeta()"
+                class="flex-1 bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 rounded">
+                Salvar
+            </button>
+            <button onclick="fecharModalMeta()"
+                class="flex-1 bg-gray-400 hover:bg-gray-500 text-white font-bold py-2 rounded">
+                Cancelar
+            </button>
+        </div>
+    </div>
+</div>
+
+<div class="bg-white p-4 md:p-6 rounded-lg shadow-lg mb-6">
+    <h3 class="text-lg md:text-xl font-bold mb-4">Adicionar Depósito</h3>
+    <form id="form-reserva" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3 md:gap-4">
+        <input type="number" id="valor" placeholder="Valor" step="0.01" required
+            class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        <input type="date" id="data" required class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        <input type="text" id="observacao" placeholder="Observação (opcional)"
+            class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        <button type="submit"
+            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded sm:col-span-2 lg:col-span-3">
+            Registrar Depósito
+        </button>
+    </form>
+</div>
+
+<div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+    <h3 class="text-lg md:text-xl font-bold mb-4">Histórico de Depósitos</h3>
+    <div id="lista-reserva" class="space-y-2"></div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let metaAtual = {{ meta_reserva }};
+
+    function formatMoney(value) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    }
+
+    function formatDate(dateStr) {
+        const date = new Date(dateStr + 'T00:00:00');
+        return date.toLocaleDateString('pt-BR');
+    }
+
+    function editarMeta() {
+        document.getElementById('modal-meta').classList.remove('hidden');
+        document.getElementById('input-nova-meta').focus();
+    }
+
+    function fecharModalMeta() {
+        document.getElementById('modal-meta').classList.add('hidden');
+    }
+
+    async function salvarMeta() {
+        const novaMeta = parseFloat(document.getElementById('input-nova-meta').value);
+
+        if (!novaMeta || novaMeta <= 0) {
+            alert('Por favor, insira um valor válido');
+            return;
+        }
+
+        const response = await fetch('/api/atualizar-meta-reserva', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ meta: novaMeta })
+        });
+
+        if (response.ok) {
+            metaAtual = novaMeta;
+            document.getElementById('meta-valor').textContent = formatMoney(novaMeta);
+            fecharModalMeta();
+            loadReserva(); // Atualizar percentual
+            alert('Meta atualizada com sucesso! 🎯');
+        } else {
+            alert('Erro ao atualizar meta');
+        }
+    }
+
+    async function loadReserva() {
+        const response = await fetch('/api/reserva-emergencia');
+        const data = await response.json();
+
+        document.getElementById('total-reserva').textContent = formatMoney(data.total);
+
+        const percentual = (data.total / metaAtual * 100).toFixed(1);
+        document.getElementById('progress-bar').style.width = Math.min(percentual, 100) + '%';
+        document.getElementById('progress-text').textContent = percentual + '%';
+        document.getElementById('percentual').textContent = percentual;
+
+        const lista = document.getElementById('lista-reserva');
+        lista.innerHTML = '';
+
+        data.historico.forEach(r => {
+            lista.innerHTML += `
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-green-50 rounded border border-green-200 gap-2">
+                <div class="flex-1">
+                    <div class="font-medium text-sm md:text-base">${formatDate(r.data)}</div>
+                    ${r.observacao ? `<div class="text-xs md:text-sm text-gray-600 mt-1">${r.observacao}</div>` : ''}
+                    <span class="text-xs text-blue-600">👤 ${r.usuario}</span>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3">
+                    <span class="text-green-600 font-bold text-sm md:text-base">${formatMoney(r.valor)}</span>
+                    <div class="flex gap-2">
+                        <button onclick="editarReserva(${r.id}, ${r.valor}, '${r.data}', '${r.observacao || ''}')" 
+                                class="text-blue-600 hover:text-blue-800 px-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteReserva(${r.id})" 
+                                class="text-red-600 hover:text-red-800 px-2">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        });
+    }
+
+    let editandoId = null;
+
+    function editarReserva(id, valor, data, observacao) {
+        editandoId = id;
+        document.getElementById('valor').value = valor;
+        document.getElementById('data').value = data;
+        document.getElementById('observacao').value = observacao;
+
+        const btn = document.querySelector('#form-reserva button[type="submit"]');
+        btn.textContent = 'Atualizar Depósito';
+        btn.classList.remove('bg-green-600', 'hover:bg-green-700');
+        btn.classList.add('bg-orange-600', 'hover:bg-orange-700');
+
+        // Scroll para o formulário
+        document.getElementById('form-reserva').scrollIntoView({ behavior: 'smooth' });
+    }
+
+    async function deleteReserva(id) {
+        if (!confirm('Tem certeza que deseja excluir este depósito?')) {
+            return;
+        }
+
+        await fetch(`/api/reserva-emergencia/${id}`, {
+            method: 'DELETE'
+        });
+
+        loadReserva();
+        alert('Depósito excluído com sucesso!');
+    }
+
+    document.getElementById('form-reserva').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const data = {
+            valor: parseFloat(document.getElementById('valor').value),
+            data: document.getElementById('data').value,
+            observacao: document.getElementById('observacao').value
+        };
+
+        if (editandoId) {
+            // Atualizar
+            await fetch(`/api/reserva-emergencia/${editandoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            editandoId = null;
+            const btn = document.querySelector('#form-reserva button[type="submit"]');
+            btn.textContent = 'Registrar Depósito';
+            btn.classList.remove('bg-orange-600', 'hover:bg-orange-700');
+            btn.classList.add('bg-green-600', 'hover:bg-green-700');
+
+            alert('Depósito atualizado com sucesso! ✓');
+        } else {
+            // Criar novo
+            await fetch('/api/reserva-emergencia', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+
+            alert('Parabéns! Mais um passo rumo à sua meta! 🎉');
+        }
+
+        e.target.reset();
+        document.getElementById('data').valueAsDate = new Date();
+        loadReserva();
+    });
+
+    document.getElementById('data').valueAsDate = new Date();
+    loadReserva();
+</script>
+{% endblock %}

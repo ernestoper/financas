@@ -1,0 +1,217 @@
+{% extends "base.html" %}
+
+{% block title %}Receitas - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <div class="mb-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Receitas Mensais</h2>
+        <p class="text-sm md:text-base text-gray-600">Gerencie suas fontes de renda</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <select id="mes-select" class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+        </select>
+        <select id="ano-select" class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+        </select>
+        <button onclick="duplicarMesAnterior()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm md:text-base whitespace-nowrap">
+            Copiar Mês Anterior
+        </button>
+    </div>
+</div>
+
+<div class="bg-gradient-to-br from-green-50 to-emerald-50 p-4 md:p-6 rounded-2xl shadow-2xl border border-green-200/50 mb-6">
+    <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+        ➕ Adicionar Nova Receita
+    </h3>
+    <form id="form-receita" class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <input type="text" id="descricao" placeholder="💰 Descrição" required
+               class="flex-1 px-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
+        <input type="number" id="valor" placeholder="R$ Valor" step="0.01" required
+               class="sm:w-40 px-4 py-3 border-2 border-green-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
+        <button type="submit" class="bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transform hover:scale-105 transition-all">
+            ✓ Adicionar
+        </button>
+    </form>
+</div>
+
+<div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50">
+    <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-green-600 to-emerald-600 bg-clip-text text-transparent mb-4">
+        💵 Suas Receitas
+    </h3>
+    <div id="lista-receitas" class="space-y-3"></div>
+    <div class="mt-4 pt-4 border-t-2 border-green-200">
+        <p class="text-lg md:text-xl font-bold">Total: <span id="total-receitas" class="text-green-600">R$ 0,00</span></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+let mesAtual = new Date().getMonth() + 1;
+let anoAtual = new Date().getFullYear();
+let editandoId = null;
+
+function formatMoney(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+async function loadReceitas() {
+    const mes = document.getElementById('mes-select').value;
+    const ano = document.getElementById('ano-select').value;
+    
+    const response = await fetch(`/api/receitas?mes=${mes}&ano=${ano}`);
+    const receitas = await response.json();
+    
+    const lista = document.getElementById('lista-receitas');
+    lista.innerHTML = '';
+    
+    if (receitas.length === 0) {
+        lista.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma receita cadastrada neste mês. Use "Copiar Mês Anterior" para facilitar.</p>';
+        document.getElementById('total-receitas').textContent = 'R$ 0,00';
+        return;
+    }
+    
+    let total = 0;
+    receitas.forEach(r => {
+        total += r.valor;
+        lista.innerHTML += `
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-gray-50 rounded gap-2">
+                <div class="flex-1">
+                    <div class="font-medium text-sm md:text-base">${r.descricao}</div>
+                    <span class="text-xs text-blue-600">👤 ${r.usuario}</span>
+                </div>
+                <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                    <span class="text-green-600 font-bold text-sm md:text-base">${formatMoney(r.valor)}</span>
+                    <div class="flex gap-3">
+                        <button onclick="editarReceita(${r.id}, '${r.descricao}', ${r.valor})" 
+                                class="text-blue-600 hover:text-blue-800">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteReceita(${r.id})" class="text-red-600 hover:text-red-800">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('total-receitas').textContent = formatMoney(total);
+}
+
+function editarReceita(id, descricao, valor) {
+    editandoId = id;
+    document.getElementById('descricao').value = descricao;
+    document.getElementById('valor').value = valor;
+    document.querySelector('#form-receita button[type="submit"]').textContent = 'Atualizar';
+    document.querySelector('#form-receita button[type="submit"]').classList.remove('bg-green-600', 'hover:bg-green-700');
+    document.querySelector('#form-receita button[type="submit"]').classList.add('bg-orange-600', 'hover:bg-orange-700');
+}
+
+document.getElementById('form-receita').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const data = {
+        descricao: document.getElementById('descricao').value,
+        valor: parseFloat(document.getElementById('valor').value),
+        mes: parseInt(document.getElementById('mes-select').value),
+        ano: parseInt(document.getElementById('ano-select').value)
+    };
+    
+    if (editandoId) {
+        // Atualizar
+        await fetch(`/api/receitas/${editandoId}`, {
+            method: 'PUT',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+        editandoId = null;
+        document.querySelector('#form-receita button[type="submit"]').textContent = 'Adicionar';
+        document.querySelector('#form-receita button[type="submit"]').classList.remove('bg-orange-600', 'hover:bg-orange-700');
+        document.querySelector('#form-receita button[type="submit"]').classList.add('bg-green-600', 'hover:bg-green-700');
+    } else {
+        // Criar novo
+        await fetch('/api/receitas', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/json'},
+            body: JSON.stringify(data)
+        });
+    }
+    
+    e.target.reset();
+    loadReceitas();
+});
+
+async function deleteReceita(id) {
+    if (confirm('Tem certeza que deseja excluir esta receita?')) {
+        await fetch(`/api/receitas/${id}`, {method: 'DELETE'});
+        loadReceitas();
+    }
+}
+
+async function duplicarMesAnterior() {
+    const mes = parseInt(document.getElementById('mes-select').value);
+    const ano = parseInt(document.getElementById('ano-select').value);
+    
+    let mesOrigem = mes - 1;
+    let anoOrigem = ano;
+    
+    if (mesOrigem === 0) {
+        mesOrigem = 12;
+        anoOrigem = ano - 1;
+    }
+    
+    if (!confirm(`Copiar receitas de ${getNomeMes(mesOrigem)}/${anoOrigem} para ${getNomeMes(mes)}/${ano}?`)) {
+        return;
+    }
+    
+    const response = await fetch('/api/receitas/duplicar-mes', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify({
+            mes_origem: mesOrigem,
+            ano_origem: anoOrigem,
+            mes_destino: mes,
+            ano_destino: ano
+        })
+    });
+    
+    if (response.ok) {
+        const data = await response.json();
+        alert(`${data.total} receitas copiadas com sucesso!`);
+        loadReceitas();
+    } else {
+        const error = await response.json();
+        alert(error.error || 'Erro ao copiar receitas');
+    }
+}
+
+function getNomeMes(mes) {
+    const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho', 
+                   'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+    return meses[mes];
+}
+
+document.getElementById('mes-select').value = mesAtual;
+document.getElementById('ano-select').value = anoAtual;
+document.getElementById('mes-select').addEventListener('change', loadReceitas);
+document.getElementById('ano-select').addEventListener('change', loadReceitas);
+
+loadReceitas();
+</script>
+{% endblock %}

@@ -1,0 +1,132 @@
+{% extends "base.html" %}
+
+{% block title %}Gastos Diários - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <h2 class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+        🛒 Gastos Diários
+    </h2>
+    <p class="text-sm md:text-base text-gray-600">Registre seus gastos do dia a dia</p>
+</div>
+
+<div class="bg-gradient-to-br from-orange-50 to-amber-50 p-4 md:p-6 rounded-2xl shadow-2xl border border-orange-200/50 mb-6">
+    <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent mb-4">
+        ➕ Adicionar Novo Gasto
+    </h3>
+    <form id="form-gasto" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <select id="categoria" required class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="">Categoria</option>
+            <option value="Alimentação">Alimentação</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Lazer">Lazer</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Criança">Criança</option>
+            <option value="Pet">Pet</option>
+            <option value="Vestuário">Vestuário</option>
+            <option value="Outros">Outros</option>
+        </select>
+        <input type="text" id="descricao" placeholder="Descrição" required
+               class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        <input type="number" id="valor" placeholder="Valor" step="0.01" required
+               class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        <input type="date" id="data" required
+               class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+        <button type="submit" class="bg-orange-600 hover:bg-orange-700 text-white px-6 py-2 rounded sm:col-span-2 lg:col-span-4">
+            Registrar Gasto
+        </button>
+    </form>
+</div>
+
+<div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-2">
+        <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-orange-600 to-amber-600 bg-clip-text text-transparent">
+            📋 Gastos deste Mês
+        </h3>
+        <div class="text-xs md:text-sm text-gray-600">
+            <span>👤 <span class="text-blue-600">Azul</span> = quem registrou</span>
+        </div>
+    </div>
+    <div id="lista-gastos" class="space-y-2"></div>
+    <div class="mt-4 pt-4 border-t">
+        <p class="text-lg md:text-xl font-bold">Total: <span id="total-gastos" class="text-orange-600">R$ 0,00</span></p>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function formatMoney(value) {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+}
+
+function formatDate(dateStr) {
+    const date = new Date(dateStr + 'T00:00:00');
+    return date.toLocaleDateString('pt-BR');
+}
+
+async function loadGastos() {
+    const response = await fetch('/api/despesas-variaveis');
+    const gastos = await response.json();
+    
+    const lista = document.getElementById('lista-gastos');
+    lista.innerHTML = '';
+    
+    let total = 0;
+    gastos.forEach(g => {
+        total += g.valor;
+        lista.innerHTML += `
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 bg-gray-50 rounded gap-2">
+                <div class="flex-1">
+                    <div class="font-medium text-sm md:text-base">${g.descricao}</div>
+                    <div class="flex flex-wrap gap-2 mt-1">
+                        <span class="text-xs md:text-sm text-gray-600">(${g.categoria})</span>
+                        <span class="text-xs md:text-sm text-gray-500">${formatDate(g.data)}</span>
+                        <span class="text-xs text-blue-600">👤 ${g.usuario}</span>
+                    </div>
+                </div>
+                <div class="flex items-center gap-3 sm:gap-4 w-full sm:w-auto justify-between sm:justify-end">
+                    <span class="text-orange-600 font-bold text-sm md:text-base">${formatMoney(g.valor)}</span>
+                    <button onclick="deleteGasto(${g.id})" class="text-red-600 hover:text-red-800">
+                        <i class="fas fa-trash"></i>
+                    </button>
+                </div>
+            </div>
+        `;
+    });
+    
+    document.getElementById('total-gastos').textContent = formatMoney(total);
+}
+
+document.getElementById('form-gasto').addEventListener('submit', async (e) => {
+    e.preventDefault();
+    
+    const data = {
+        categoria: document.getElementById('categoria').value,
+        descricao: document.getElementById('descricao').value,
+        valor: parseFloat(document.getElementById('valor').value),
+        data: document.getElementById('data').value
+    };
+    
+    await fetch('/api/despesas-variaveis', {
+        method: 'POST',
+        headers: {'Content-Type': 'application/json'},
+        body: JSON.stringify(data)
+    });
+    
+    e.target.reset();
+    document.getElementById('data').valueAsDate = new Date();
+    loadGastos();
+});
+
+async function deleteGasto(id) {
+    if (confirm('Tem certeza que deseja excluir este gasto?')) {
+        await fetch(`/api/despesas-variaveis/${id}`, {method: 'DELETE'});
+        loadGastos();
+    }
+}
+
+document.getElementById('data').valueAsDate = new Date();
+loadGastos();
+</script>
+{% endblock %}

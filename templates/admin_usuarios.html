@@ -1,0 +1,108 @@
+{% extends "base.html" %}
+
+{% block title %}Usuários - Painel Admin{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
+        <div>
+            <h2 class="text-2xl md:text-3xl font-bold text-gray-800">👥 Todos os Usuários</h2>
+            <p class="text-sm md:text-base text-gray-600">Gerenciamento de usuários</p>
+        </div>
+        <a href="/admin" class="bg-gray-600 hover:bg-gray-700 text-white px-4 py-2 rounded text-sm">
+            ← Voltar ao Admin
+        </a>
+    </div>
+</div>
+
+<div class="bg-white p-4 md:p-6 rounded-lg shadow-lg">
+    <div class="mb-4 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <h3 class="text-lg md:text-xl font-bold text-gray-800">Lista de Usuários ({{ usuarios|length }})</h3>
+        <input type="text" id="search" placeholder="Buscar usuário..." 
+               class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500 w-full sm:w-64">
+    </div>
+    
+    <div class="overflow-x-auto">
+        <table class="w-full text-sm md:text-base" id="usuarios-table">
+            <thead class="bg-gray-50">
+                <tr>
+                    <th class="px-4 py-3 text-left">ID</th>
+                    <th class="px-4 py-3 text-left">Nome</th>
+                    <th class="px-4 py-3 text-left hidden sm:table-cell">Username</th>
+                    <th class="px-4 py-3 text-left">Família</th>
+                    <th class="px-4 py-3 text-left hidden md:table-cell">Admin</th>
+                    <th class="px-4 py-3 text-left hidden lg:table-cell">Ações</th>
+                </tr>
+            </thead>
+            <tbody class="divide-y">
+                {% for usuario in usuarios %}
+                <tr class="hover:bg-gray-50 usuario-row">
+                    <td class="px-4 py-3 text-gray-600">#{{ usuario.id }}</td>
+                    <td class="px-4 py-3 font-medium">
+                        {{ usuario.nome }}
+                        {% if usuario.is_admin %}
+                        <span class="ml-2 text-xs bg-red-100 text-red-800 px-2 py-1 rounded">ADMIN</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 text-gray-600 font-mono text-xs hidden sm:table-cell">{{ usuario.username }}</td>
+                    <td class="px-4 py-3">
+                        <span class="text-sm">{{ usuario.familia.nome if usuario.familia else 'N/A' }}</span>
+                    </td>
+                    <td class="px-4 py-3 hidden md:table-cell">
+                        {% if usuario.is_admin %}
+                        <span class="text-green-600">✓ Sim</span>
+                        {% else %}
+                        <span class="text-gray-400">✗ Não</span>
+                        {% endif %}
+                    </td>
+                    <td class="px-4 py-3 hidden lg:table-cell">
+                        {% if not usuario.is_admin %}
+                        <button onclick="tornarAdmin({{ usuario.id }}, '{{ usuario.nome }}')" 
+                                class="bg-blue-600 hover:bg-blue-700 text-white px-3 py-1 rounded text-xs">
+                            Tornar Admin
+                        </button>
+                        {% else %}
+                        <span class="text-gray-400 text-xs">Já é admin</span>
+                        {% endif %}
+                    </td>
+                </tr>
+                {% endfor %}
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<script>
+// Busca em tempo real
+document.getElementById('search').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    const rows = document.querySelectorAll('.usuario-row');
+    
+    rows.forEach(row => {
+        const text = row.textContent.toLowerCase();
+        if (text.includes(searchTerm)) {
+            row.style.display = '';
+        } else {
+            row.style.display = 'none';
+        }
+    });
+});
+
+async function tornarAdmin(userId, userName) {
+    if (!confirm(`Tem certeza que deseja tornar ${userName} um administrador?`)) {
+        return;
+    }
+    
+    const response = await fetch(`/admin/tornar-admin/${userId}`, {
+        method: 'POST'
+    });
+    
+    if (response.ok) {
+        alert(`${userName} agora é administrador!`);
+        location.reload();
+    } else {
+        alert('Erro ao tornar usuário admin');
+    }
+}
+</script>
+{% endblock %}

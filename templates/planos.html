@@ -1,0 +1,179 @@
+{% extends "base.html" %}
+
+{% block title %}Planos - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8 text-center">
+    <h2 class="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent">
+        💎 Escolha Seu Plano
+    </h2>
+    <p class="text-base md:text-lg text-gray-700 mt-3 font-medium">Por enquanto, tudo está liberado gratuitamente! 🎉</p>
+    <p class="text-sm md:text-base text-gray-600 mt-2">Aproveite enquanto estamos em fase beta</p>
+</div>
+
+<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 md:gap-8 mb-6 md:mb-8">
+    <!-- Plano Free -->
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg border-2 border-gray-200">
+        <div class="text-center mb-6">
+            <h3 class="text-xl md:text-2xl font-bold text-gray-800">Gratuito</h3>
+            <div class="mt-4">
+                <span class="text-3xl md:text-4xl font-bold">R$ 0</span>
+                <span class="text-gray-600 text-sm md:text-base">/mês</span>
+            </div>
+            <p class="text-xs md:text-sm text-green-600 mt-2">✨ Liberado para todos agora!</p>
+        </div>
+        
+        <ul class="space-y-2 md:space-y-3 mb-6 md:mb-8 text-sm md:text-base">
+            <li class="flex items-center">
+                <i class="fas fa-check text-green-600 mr-2 flex-shrink-0"></i>
+                <span>Até 2 usuários</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-green-600 mr-2 flex-shrink-0"></i>
+                <span>6 meses de histórico</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-green-600 mr-2 flex-shrink-0"></i>
+                <span>Dashboard básico</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-green-600 mr-2 flex-shrink-0"></i>
+                <span>Receitas e despesas</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-green-600 mr-2 flex-shrink-0"></i>
+                <span>Reserva de emergência</span>
+            </li>
+        </ul>
+        
+        <button disabled class="w-full bg-gray-400 text-white font-bold py-2 md:py-3 rounded cursor-not-allowed text-sm md:text-base">
+            Plano Atual
+        </button>
+    </div>
+    
+    <!-- Plano Premium -->
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-2xl border-4 border-blue-600 relative md:col-span-2 lg:col-span-1">
+        <div class="absolute top-0 left-1/2 transform -translate-x-1/2 -translate-y-1/2">
+            <span class="bg-blue-600 text-white px-3 md:px-4 py-1 rounded-full text-xs md:text-sm font-bold">
+                MAIS POPULAR
+            </span>
+        </div>
+        
+        <div class="text-center mb-6 mt-4 md:mt-0">
+            <h3 class="text-xl md:text-2xl font-bold text-gray-800">Premium</h3>
+            <div class="mt-4">
+                <span class="text-3xl md:text-4xl font-bold">R$ 4,99</span>
+                <span class="text-gray-600 text-sm md:text-base">/mês</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">ou R$ 49,90/ano</p>
+            <p class="text-xs md:text-sm text-blue-600 mt-2">🚀 Em breve!</p>
+        </div>
+        
+        <ul class="space-y-2 md:space-y-3 mb-6 md:mb-8 text-sm md:text-base">
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span class="font-semibold">Até 10 usuários</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span class="font-semibold">Histórico ilimitado</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span>Tudo do plano Free +</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span>📊 Exportar relatórios PDF/Excel</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span>📈 Gráficos avançados</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span>🔔 Alertas personalizados</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span>💾 Backup na nuvem</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-blue-600 mr-2 flex-shrink-0"></i>
+                <span>🎯 Suporte prioritário</span>
+            </li>
+        </ul>
+        
+        <button disabled class="w-full bg-gray-400 text-white font-bold py-2 md:py-3 rounded cursor-not-allowed text-sm md:text-base">
+            Em Breve
+        </button>
+    </div>
+    
+    <!-- Plano VIP -->
+    <div class="bg-white p-6 md:p-8 rounded-lg shadow-lg border-2 border-purple-200">
+        <div class="text-center mb-6">
+            <h3 class="text-xl md:text-2xl font-bold text-gray-800">VIP</h3>
+            <div class="mt-4">
+                <span class="text-3xl md:text-4xl font-bold">R$ 9,99</span>
+                <span class="text-gray-600 text-sm md:text-base">/mês</span>
+            </div>
+            <p class="text-xs text-gray-500 mt-1">ou R$ 99,90/ano</p>
+            <p class="text-xs md:text-sm text-purple-600 mt-2">👑 Para empresas</p>
+        </div>
+        
+        <ul class="space-y-2 md:space-y-3 mb-6 md:mb-8 text-sm md:text-base">
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span class="font-semibold">Usuários ilimitados</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span>Tudo do plano Premium +</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span>🤖 Previsões com IA</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span>🏦 Integração com bancos</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span>📱 App mobile exclusivo</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span>🎨 Personalização completa</span>
+            </li>
+            <li class="flex items-center">
+                <i class="fas fa-check text-purple-600 mr-2 flex-shrink-0"></i>
+                <span>👨‍💼 Gerente de conta dedicado</span>
+            </li>
+        </ul>
+        
+        <button disabled class="w-full bg-gray-400 text-white font-bold py-2 md:py-3 rounded cursor-not-allowed text-sm md:text-base">
+            Em Breve
+        </button>
+    </div>
+</div>
+
+<div class="bg-gradient-to-r from-blue-50 to-purple-50 border-l-4 border-blue-600 p-4 md:p-6 rounded-2xl shadow-lg">
+    <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent mb-2">
+        🎉 Fase Beta - Tudo Grátis!
+    </h3>
+    <p class="text-sm md:text-base text-blue-800 mb-4">
+        Estamos em fase beta e todas as funcionalidades estão liberadas gratuitamente para todos os usuários.
+        Aproveite para testar tudo sem compromisso!
+    </p>
+    <p class="text-xs md:text-sm text-blue-700">
+        <strong>Promessa:</strong> Quando ativarmos os planos pagos, os primeiros 100 usuários terão <strong>Founder Plan</strong> por apenas <strong>R$ 2,99/mês vitalício!</strong> 🚀
+    </p>
+</div>
+
+<div class="mt-6 md:mt-8 text-center">
+    <a href="/dashboard" class="text-sm md:text-base text-blue-600 hover:text-blue-800">
+        ← Voltar ao Dashboard
+    </a>
+</div>
+{% endblock %}

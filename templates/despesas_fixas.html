@@ -1,0 +1,300 @@
+{% extends "base.html" %}
+
+{% block title %}Despesas Fixas - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="mb-6 md:mb-8">
+    <div class="mb-4">
+        <h2 class="text-2xl md:text-3xl font-bold text-gray-800">Despesas Fixas</h2>
+        <p class="text-sm md:text-base text-gray-600">Gerencie suas contas mensais</p>
+    </div>
+    <div class="flex flex-col sm:flex-row gap-3 sm:gap-4">
+        <select id="mes-select" class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="1">Janeiro</option>
+            <option value="2">Fevereiro</option>
+            <option value="3">Março</option>
+            <option value="4">Abril</option>
+            <option value="5">Maio</option>
+            <option value="6">Junho</option>
+            <option value="7">Julho</option>
+            <option value="8">Agosto</option>
+            <option value="9">Setembro</option>
+            <option value="10">Outubro</option>
+            <option value="11">Novembro</option>
+            <option value="12">Dezembro</option>
+        </select>
+        <select id="ano-select" class="px-4 py-2 border rounded focus:outline-none focus:border-blue-500">
+            <option value="2024">2024</option>
+            <option value="2025">2025</option>
+            <option value="2026">2026</option>
+        </select>
+        <button onclick="duplicarMesAnterior()" class="bg-purple-600 hover:bg-purple-700 text-white px-4 py-2 rounded text-sm md:text-base whitespace-nowrap">
+            Copiar Mês Anterior
+        </button>
+    </div>
+</div>
+
+<div class="bg-gradient-to-br from-red-50 to-rose-50 p-4 md:p-6 rounded-2xl shadow-2xl border border-red-200/50 mb-6">
+    <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent mb-4">
+        ➕ Adicionar Nova Despesa
+    </h3>
+    <form id="form-despesa" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-4">
+        <select id="categoria" required class="px-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all">
+            <option value="">Categoria</option>
+            <option value="Moradia">Moradia</option>
+            <option value="Transporte">Transporte</option>
+            <option value="Saúde">Saúde</option>
+            <option value="Educação">Educação</option>
+            <option value="Alimentação">Alimentação</option>
+            <option value="Pet">Pet</option>
+            <option value="Criança">Criança</option>
+            <option value="Vestuário">Vestuário</option>
+            <option value="Streaming">Streaming</option>
+            <option value="Outros">Outros</option>
+        </select>
+        <input type="text" id="descricao" placeholder="📝 Descrição" required
+            class="px-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all">
+        <input type="number" id="valor" placeholder="R$ Valor" step="0.01" required
+            class="px-4 py-3 border-2 border-red-200 rounded-xl focus:outline-none focus:border-red-500 focus:ring-2 focus:ring-red-200 transition-all">
+        <button type="submit" class="bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white px-6 py-3 rounded-xl font-bold shadow-lg transform hover:scale-105 transition-all">
+            ✓ Adicionar
+        </button>
+    </form>
+</div>
+
+<div class="bg-white/80 backdrop-blur-sm p-4 md:p-6 rounded-2xl shadow-2xl border border-gray-200/50">
+    <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-4 gap-3">
+        <h3 class="text-lg md:text-xl font-bold bg-gradient-to-r from-red-600 to-rose-600 bg-clip-text text-transparent">
+            📋 Suas Despesas Fixas
+        </h3>
+        <div class="flex gap-3 text-sm">
+            <div class="bg-green-100 text-green-800 px-3 py-1 rounded font-bold">
+                ✓ <span id="total-pagas">0</span> Pagas
+            </div>
+            <div class="bg-red-100 text-red-800 px-3 py-1 rounded font-bold">
+                ⏳ <span id="total-pendentes">0</span> Pendentes
+            </div>
+        </div>
+    </div>
+    <div id="lista-despesas" class="space-y-2"></div>
+    <div class="mt-4 pt-4 border-t flex flex-col sm:flex-row justify-between items-start sm:items-center gap-3">
+        <div>
+            <p class="text-lg md:text-xl font-bold">Total: <span id="total-despesas" class="text-red-600">R$ 0,00</span></p>
+        </div>
+        <div class="flex gap-4 text-sm">
+            <div>
+                <span class="text-gray-600">Pagas:</span>
+                <span id="valor-pagas" class="font-bold text-green-600">R$ 0,00</span>
+            </div>
+            <div>
+                <span class="text-gray-600">Pendentes:</span>
+                <span id="valor-pendentes" class="font-bold text-red-600">R$ 0,00</span>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    let mesAtual = new Date().getMonth() + 1;
+    let anoAtual = new Date().getFullYear();
+    let editandoId = null;
+
+    function formatMoney(value) {
+        return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
+    }
+
+    async function loadDespesas() {
+        const mes = document.getElementById('mes-select').value;
+        const ano = document.getElementById('ano-select').value;
+
+        const response = await fetch(`/api/despesas-fixas?mes=${mes}&ano=${ano}`);
+        const despesas = await response.json();
+
+        const lista = document.getElementById('lista-despesas');
+        lista.innerHTML = '';
+
+        if (despesas.length === 0) {
+            lista.innerHTML = '<p class="text-gray-500 text-center py-4">Nenhuma despesa cadastrada neste mês. Use "Copiar Mês Anterior" para facilitar.</p>';
+            document.getElementById('total-despesas').textContent = 'R$ 0,00';
+            return;
+        }
+
+        let total = 0;
+        despesas.forEach(d => {
+            total += d.valor;
+            const pagoClass = d.pago ? 'bg-green-50 border-green-200' : 'bg-red-50 border-red-200';
+            const statusBadge = d.pago 
+                ? '<span class="bg-green-500 text-white px-2 py-1 rounded text-xs font-bold">✓ PAGO</span>'
+                : '<span class="bg-red-500 text-white px-2 py-1 rounded text-xs font-bold">PENDENTE</span>';
+            
+            // Informação de quem pagou
+            const pagoPorInfo = d.pago && d.pago_por 
+                ? `<span class="text-xs text-blue-600">👤 Pago por ${d.pago_por}</span>`
+                : '';
+            
+            const botaoPagar = d.pago
+                ? `<button onclick="togglePago(${d.id}, false)" class="bg-gray-400 hover:bg-gray-500 text-white px-3 py-1 rounded text-xs">
+                     Desfazer
+                   </button>`
+                : `<button onclick="togglePago(${d.id}, true)" class="bg-green-500 hover:bg-green-600 text-white px-3 py-1 rounded text-xs font-bold">
+                     💰 Pagar
+                   </button>`;
+            
+            lista.innerHTML += `
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center p-3 ${pagoClass} rounded border gap-3">
+                <div class="flex items-center gap-3 w-full sm:w-auto flex-1">
+                    <div class="flex-1">
+                        <div class="flex items-center gap-2 mb-1">
+                            <span class="font-medium text-sm md:text-base">${d.descricao}</span>
+                            ${statusBadge}
+                        </div>
+                        <div class="flex flex-col gap-1">
+                            <span class="text-xs md:text-sm text-gray-600">${d.categoria}</span>
+                            ${pagoPorInfo}
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-between sm:justify-end">
+                    <span class="text-red-600 font-bold text-sm md:text-base">${formatMoney(d.valor)}</span>
+                    <div class="flex gap-2">
+                        ${botaoPagar}
+                        <button onclick="editarDespesa(${d.id}, '${d.categoria}', '${d.descricao}', ${d.valor})" 
+                                class="text-blue-600 hover:text-blue-800 px-2">
+                            <i class="fas fa-edit"></i>
+                        </button>
+                        <button onclick="deleteDespesa(${d.id})" class="text-red-600 hover:text-red-800 px-2">
+                            <i class="fas fa-trash"></i>
+                        </button>
+                    </div>
+                </div>
+            </div>
+        `;
+        });
+
+        // Calcular totais
+        const totalPagas = despesas.filter(d => d.pago).length;
+        const totalPendentes = despesas.filter(d => !d.pago).length;
+        const valorPagas = despesas.filter(d => d.pago).reduce((sum, d) => sum + d.valor, 0);
+        const valorPendentes = despesas.filter(d => !d.pago).reduce((sum, d) => sum + d.valor, 0);
+        
+        document.getElementById('total-despesas').textContent = formatMoney(total);
+        document.getElementById('total-pagas').textContent = totalPagas;
+        document.getElementById('total-pendentes').textContent = totalPendentes;
+        document.getElementById('valor-pagas').textContent = formatMoney(valorPagas);
+        document.getElementById('valor-pendentes').textContent = formatMoney(valorPendentes);
+    }
+
+    function editarDespesa(id, categoria, descricao, valor) {
+        editandoId = id;
+        document.getElementById('categoria').value = categoria;
+        document.getElementById('descricao').value = descricao;
+        document.getElementById('valor').value = valor;
+        document.querySelector('#form-despesa button[type="submit"]').textContent = 'Atualizar';
+        document.querySelector('#form-despesa button[type="submit"]').classList.remove('bg-blue-600', 'hover:bg-blue-700');
+        document.querySelector('#form-despesa button[type="submit"]').classList.add('bg-orange-600', 'hover:bg-orange-700');
+    }
+
+    document.getElementById('form-despesa').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const data = {
+            categoria: document.getElementById('categoria').value,
+            descricao: document.getElementById('descricao').value,
+            valor: parseFloat(document.getElementById('valor').value),
+            mes: parseInt(document.getElementById('mes-select').value),
+            ano: parseInt(document.getElementById('ano-select').value)
+        };
+
+        if (editandoId) {
+            // Atualizar
+            await fetch(`/api/despesas-fixas/${editandoId}`, {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+            editandoId = null;
+            document.querySelector('#form-despesa button[type="submit"]').textContent = 'Adicionar';
+            document.querySelector('#form-despesa button[type="submit"]').classList.remove('bg-orange-600', 'hover:bg-orange-700');
+            document.querySelector('#form-despesa button[type="submit"]').classList.add('bg-blue-600', 'hover:bg-blue-700');
+        } else {
+            // Criar novo
+            await fetch('/api/despesas-fixas', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(data)
+            });
+        }
+
+        e.target.reset();
+        loadDespesas();
+    });
+
+    async function togglePago(id, pago) {
+        await fetch(`/api/despesas-fixas/${id}`, {
+            method: 'PUT',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ pago })
+        });
+        loadDespesas();
+    }
+
+    async function deleteDespesa(id) {
+        if (confirm('Tem certeza que deseja excluir esta despesa?')) {
+            await fetch(`/api/despesas-fixas/${id}`, { method: 'DELETE' });
+            loadDespesas();
+        }
+    }
+
+    async function duplicarMesAnterior() {
+        const mes = parseInt(document.getElementById('mes-select').value);
+        const ano = parseInt(document.getElementById('ano-select').value);
+
+        let mesOrigem = mes - 1;
+        let anoOrigem = ano;
+
+        if (mesOrigem === 0) {
+            mesOrigem = 12;
+            anoOrigem = ano - 1;
+        }
+
+        if (!confirm(`Copiar despesas de ${getNomeMes(mesOrigem)}/${anoOrigem} para ${getNomeMes(mes)}/${ano}?`)) {
+            return;
+        }
+
+        const response = await fetch('/api/despesas-fixas/duplicar-mes', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                mes_origem: mesOrigem,
+                ano_origem: anoOrigem,
+                mes_destino: mes,
+                ano_destino: ano
+            })
+        });
+
+        if (response.ok) {
+            const data = await response.json();
+            alert(`${data.total} despesas copiadas com sucesso!`);
+            loadDespesas();
+        } else {
+            const error = await response.json();
+            alert(error.error || 'Erro ao copiar despesas');
+        }
+    }
+
+    function getNomeMes(mes) {
+        const meses = ['', 'Janeiro', 'Fevereiro', 'Março', 'Abril', 'Maio', 'Junho',
+            'Julho', 'Agosto', 'Setembro', 'Outubro', 'Novembro', 'Dezembro'];
+        return meses[mes];
+    }
+
+    document.getElementById('mes-select').value = mesAtual;
+    document.getElementById('ano-select').value = anoAtual;
+    document.getElementById('mes-select').addEventListener('change', loadDespesas);
+    document.getElementById('ano-select').addEventListener('change', loadDespesas);
+
+    loadDespesas();
+</script>
+{% endblock %}
