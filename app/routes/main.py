@@ -38,8 +38,15 @@ def reserva_page():
     return render_template('reserva.html', meta_reserva=familia.meta_reserva if familia else 40500.00)
 
 @bp.route('/planos')
-def planos_page():
+@login_required
+def planos():
     return render_template('planos.html')
+
+@bp.route('/perfil')
+@login_required
+def perfil():
+    return render_template('perfil.html', meta_reserva=0) # Placeholder, will be fetched via API
+
 @bp.route('/metas')
 @login_required
 def metas():

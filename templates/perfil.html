@@ -1,0 +1,232 @@
+{% extends "base.html" %}
+
+{% block title %}Meu Perfil - Controle Financeiro{% endblock %}
+
+{% block content %}
+<div class="max-w-4xl mx-auto">
+    <div class="mb-6 md:mb-8 text-center">
+        <h2
+            class="text-3xl md:text-4xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+            👤 Meu Perfil
+        </h2>
+        <p class="text-gray-600">Gerencie suas informações pessoais</p>
+    </div>
+
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Cartão de Avatar -->
+        <div
+            class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200/50 text-center md:col-span-1">
+            <div class="relative inline-block mb-4">
+                <div
+                    class="w-32 h-32 rounded-full bg-gradient-to-br from-blue-100 to-purple-100 flex items-center justify-center text-6xl shadow-inner border-4 border-white">
+                    {{ session.avatar|default('👤') }}
+                </div>
+                <button onclick="abrirModalAvatar()"
+                    class="absolute bottom-0 right-0 bg-blue-600 hover:bg-blue-700 text-white p-2 rounded-full shadow-lg transition-transform hover:scale-110">
+                    <i class="fas fa-camera"></i>
+                </button>
+            </div>
+            <h3 class="text-xl font-bold text-gray-800">{{ session.nome }}</h3>
+            <p class="text-sm text-gray-500 mb-4">@{{ session.username }}</p>
+            <div class="bg-blue-50 text-blue-700 px-4 py-2 rounded-lg text-sm font-medium">
+                Família: {{ session.familia_nome }}
+            </div>
+        </div>
+
+        <!-- Formulários -->
+        <div class="md:col-span-2 space-y-6">
+            <!-- Alterar Nome -->
+            <div class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200/50">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-user-edit text-blue-600"></i> Informações Básicas
+                </h3>
+                <form id="form-perfil" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Nome de Exibição</label>
+                        <input type="text" name="nome" value="{{ session.nome }}" required
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
+                    </div>
+                    <button type="submit"
+                        class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all">
+                        Salvar Alterações
+                    </button>
+                </form>
+            </div>
+
+            <!-- Alterar Família -->
+            <div class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200/50">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-users text-green-600"></i> Configurações da Família
+                </h3>
+                <form id="form-familia" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Nome da Família</label>
+                        <input type="text" name="familia_nome" value="{{ session.familia_nome }}" required
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
+                    </div>
+                    <div class="flex items-center justify-between">
+                        <button type="submit"
+                            class="bg-green-600 hover:bg-green-700 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all">
+                            Atualizar Família
+                        </button>
+                        <span class="text-sm text-gray-500">Código: <span
+                                class="font-mono bg-gray-100 px-2 py-1 rounded">{{ session.codigo_convite
+                                }}</span></span>
+                    </div>
+                </form>
+            </div>
+
+            <!-- Alterar Senha -->
+            <div class="bg-white/80 backdrop-blur-sm p-6 rounded-2xl shadow-xl border border-gray-200/50">
+                <h3 class="text-lg font-bold text-gray-800 mb-4 flex items-center gap-2">
+                    <i class="fas fa-lock text-purple-600"></i> Segurança
+                </h3>
+                <form id="form-senha" class="space-y-4">
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
+                        <input type="password" name="senha" placeholder="••••••••" required minlength="6"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Confirmar Senha</label>
+                        <input type="password" name="confirmar_senha" placeholder="••••••••" required minlength="6"
+                            class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
+                    </div>
+                    <button type="submit"
+                        class="bg-purple-600 hover:bg-purple-700 text-white px-6 py-2 rounded-xl font-bold shadow-md transition-all">
+                        Alterar Senha
+                    </button>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Modal Seleção de Avatar -->
+<div id="modal-avatar"
+    class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
+    <div class="bg-white/95 backdrop-blur-xl p-6 rounded-3xl shadow-2xl max-w-md w-full border border-gray-200/50">
+        <h3 class="text-xl font-bold text-gray-800 mb-4 text-center">Escolha seu Avatar</h3>
+        <div class="grid grid-cols-4 gap-4 mb-6">
+            {% for avatar in ['👨‍💼', '👩‍💼', '👨‍💻', '👩‍💻', '🦸‍♂️', '🦸‍♀️', '🧙‍♂️', '🧙‍♀️', '🐶', '🐱', '🦊',
+            '🦁', '🐸', '🦄', '🤖', '👽'] %}
+            <button onclick="selecionarAvatar('{{ avatar }}')"
+                class="text-4xl p-3 rounded-xl hover:bg-blue-50 hover:scale-110 transition-all border border-transparent hover:border-blue-200">
+                {{ avatar }}
+            </button>
+            {% endfor %}
+        </div>
+        <button onclick="fecharModalAvatar()"
+            class="w-full bg-gray-200 hover:bg-gray-300 text-gray-800 font-bold py-3 rounded-xl transition-all">
+            Cancelar
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+    function abrirModalAvatar() {
+        document.getElementById('modal-avatar').classList.remove('hidden');
+    }
+
+    function fecharModalAvatar() {
+        document.getElementById('modal-avatar').classList.add('hidden');
+    }
+
+    async function selecionarAvatar(avatar) {
+        try {
+            const response = await fetch('/api/perfil/avatar', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ avatar })
+            });
+
+            if (response.ok) {
+                showToast('Avatar atualizado! Recarregando...', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast('Erro ao atualizar avatar', 'error');
+            }
+        } catch (error) {
+            showToast('Erro de conexão', 'error');
+        }
+        fecharModalAvatar();
+    }
+
+    document.getElementById('form-perfil').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const nome = formData.get('nome');
+
+        try {
+            const response = await fetch('/api/perfil', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome })
+            });
+
+            if (response.ok) {
+                showToast('Perfil atualizado com sucesso!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast('Erro ao atualizar perfil', 'error');
+            }
+        } catch (error) {
+            showToast('Erro de conexão', 'error');
+        }
+    });
+
+    document.getElementById('form-familia').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const nome = formData.get('familia_nome');
+
+        try {
+            const response = await fetch('/api/perfil/familia', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ nome })
+            });
+
+            if (response.ok) {
+                showToast('Nome da família atualizado!', 'success');
+                setTimeout(() => window.location.reload(), 1000);
+            } else {
+                showToast('Erro ao atualizar família', 'error');
+            }
+        } catch (error) {
+            showToast('Erro de conexão', 'error');
+        }
+    });
+
+    document.getElementById('form-senha').addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const formData = new FormData(e.target);
+        const senha = formData.get('senha');
+        const confirmar = formData.get('confirmar_senha');
+
+        if (senha !== confirmar) {
+            showToast('As senhas não coincidem!', 'error');
+            return;
+        }
+
+        try {
+            const response = await fetch('/api/perfil/senha', {
+                method: 'PUT',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ senha })
+            });
+
+            if (response.ok) {
+                showToast('Senha alterada com sucesso!', 'success');
+                e.target.reset();
+            } else {
+                showToast('Erro ao alterar senha', 'error');
+            }
+        } catch (error) {
+            showToast('Erro de conexão', 'error');
+        }
+    });
+</script>
+{% endblock %}

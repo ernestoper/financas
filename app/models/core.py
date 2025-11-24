@@ -24,6 +24,7 @@ class User(db.Model):
     password_hash = db.Column(db.String(255), nullable=False)
     familia_id = db.Column(db.Integer, db.ForeignKey('familia.id'), nullable=False)
     is_admin = db.Column(db.Boolean, default=False)
+    avatar = db.Column(db.String(50), default='default.png')
     
     # Relacionamento com Familia
     familia = db.relationship('Familia', backref='usuarios', lazy=True)

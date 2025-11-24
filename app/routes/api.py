@@ -1,7 +1,7 @@
 from flask import Blueprint, jsonify, request, session
 from datetime import datetime
 from app.extensions import db
-from app.models import User, Familia, Receita, DespesaFixa, DespesaVariavel, ReservaEmergencia, MetaCategoria
+from app.models import User, Familia, Receita, DespesaFixa, DespesaVariavel, ReservaEmergencia, MetaCategoria, ReservaGoal
 from app.utils import login_required
 
 bp = Blueprint('api', __name__, url_prefix='/api')
@@ -26,12 +26,67 @@ def atualizar_meta_reserva():
     
     return jsonify({'success': True, 'meta': nova_meta})
 
+def verificar_recorrencia(familia_id, mes_atual, ano_atual):
+    """
+    Verifica se existem despesas recorrentes do mês anterior que precisam ser criadas no mês atual.
+    """
+    # Determinar mês anterior
+    if mes_atual == 1:
+        mes_anterior = 12
+        ano_anterior = ano_atual - 1
+    else:
+        mes_anterior = mes_atual - 1
+        ano_anterior = ano_atual
+        
+    # Buscar despesas recorrentes do mês anterior
+    despesas_recorrentes = DespesaFixa.query.filter_by(
+        familia_id=familia_id,
+        mes=mes_anterior,
+        ano=ano_anterior,
+        recorrente=True
+    ).all()
+    
+    novas_despesas = 0
+    
+    for despesa in despesas_recorrentes:
+        # Verificar se já existe no mês atual (pela descrição e categoria, para evitar duplicatas)
+        existe = DespesaFixa.query.filter_by(
+            familia_id=familia_id,
+            mes=mes_atual,
+            ano=ano_atual,
+            descricao=despesa.descricao,
+            categoria=despesa.categoria
+        ).first()
+        
+        if not existe:
+            nova_despesa = DespesaFixa(
+                categoria=despesa.categoria,
+                descricao=despesa.descricao,
+                valor=despesa.valor,
+                mes=mes_atual,
+                ano=ano_atual,
+                recorrente=True,
+                dia_vencimento=despesa.dia_vencimento,
+                user_id=despesa.user_id, # Mantém o criador original
+                familia_id=familia_id,
+                pago=False # Começa como não paga
+            )
+            db.session.add(nova_despesa)
+            novas_despesas += 1
+            
+    if novas_despesas > 0:
+        db.session.commit()
+        print(f"✅ {novas_despesas} despesas recorrentes geradas para {mes_atual}/{ano_atual}")
+
 @bp.route('/dashboard-data')
 @login_required
 def dashboard_data():
     mes = request.args.get('mes', datetime.now().month, type=int)
     ano = request.args.get('ano', datetime.now().year, type=int)
     familia_id = session.get('familia_id')
+    
+    # Verificar recorrência ao carregar o dashboard
+    verificar_recorrencia(familia_id, mes, ano)
     
     receitas = db.session.query(db.func.sum(Receita.valor)).filter(
         Receita.mes == mes,
@@ -149,6 +204,16 @@ def dashboard_data():
     # Ordenar por percentual decrescente
     comparacao_metas.sort(key=lambda x: x['percentual'], reverse=True)
 
+    # Total da reserva de emergência (Valor Atual)
+    reserva_total = db.session.query(func.sum(ReservaEmergencia.valor)).filter_by(
+        familia_id=familia_id
+    ).scalar() or 0
+    
+    # Meta Total (Soma de todas as metas definidas)
+    meta_reserva_total = db.session.query(func.sum(ReservaGoal.valor_meta)).filter_by(
+        familia_id=familia_id
+    ).scalar() or 0
+    
     return jsonify({
         'receitas': float(receitas),
         'despesas_fixas': float(despesas_fixas),
@@ -159,7 +224,9 @@ def dashboard_data():
         'ano': ano,
         'gastos_por_usuario': gastos_por_usuario,
         'gastos_por_categoria': gastos_por_categoria,
-        'comparacao_metas': comparacao_metas
+        'comparacao_metas': comparacao_metas,
+        'reserva_emergencia_total': float(reserva_total),
+        'meta_reserva_total': float(meta_reserva_total)
     })
 
 @bp.route('/receitas', methods=['GET', 'POST'])
@@ -292,25 +359,27 @@ def api_despesas_fixas():
     
     data = request.get_json()
     despesa = DespesaFixa(
-        categoria=data['categoria'],
+        categoria=data.get('categoria', 'Outros'),
         descricao=data['descricao'],
-        valor=data['valor'],
-        pago=data.get('pago', False),
-        mes=data.get('mes', datetime.now().month),
-        ano=data.get('ano', datetime.now().year),
+        valor=float(data['valor']),
+        mes=data.get('mes', datetime.now().month), # Use .get with default for mes/ano
+        ano=data.get('ano', datetime.now().year), # Use .get with default for mes/ano
+        recorrente=data.get('recorrente', False),
+        dia_vencimento=data.get('dia_vencimento'),
         user_id=session['user_id'],
         familia_id=familia_id
     )
     db.session.add(despesa)
     db.session.commit()
     return jsonify({
-        'id': despesa.id,
+        'id': despesa.id, 
         'categoria': despesa.categoria,
-        'descricao': despesa.descricao,
+        'descricao': despesa.descricao, 
         'valor': despesa.valor,
-        'pago': despesa.pago,
         'mes': despesa.mes,
-        'ano': despesa.ano
+        'ano': despesa.ano,
+        'recorrente': despesa.recorrente,
+        'dia_vencimento': despesa.dia_vencimento
     }), 201
 
 @bp.route('/despesas-fixas/<int:id>', methods=['PUT', 'DELETE'])
@@ -318,27 +387,38 @@ def api_despesas_fixas():
 def api_despesa_fixa_detail(id):
     despesa = DespesaFixa.query.get_or_404(id)
     
+    if despesa.familia_id != session.get('familia_id'):
+        return jsonify({'error': 'Acesso negado'}), 403
+    
     if request.method == 'DELETE':
         db.session.delete(despesa)
         db.session.commit()
-        return '', 204
+        return jsonify({'message': 'Despesa excluída'}), 204
     
     data = request.get_json()
     
-    # Se está marcando como pago, registrar quem pagou e quando
-    if 'pago' in data and data['pago'] and not despesa.pago:
-        despesa.pago = True
-        despesa.pago_por_user_id = session.get('user_id')
-        despesa.data_pagamento = datetime.utcnow()
-    elif 'pago' in data and not data['pago']:
-        # Se está desmarcando, limpar os dados de pagamento
-        despesa.pago = False
-        despesa.pago_por_user_id = None
-        despesa.data_pagamento = None
-    
-    despesa.valor = data.get('valor', despesa.valor)
-    despesa.descricao = data.get('descricao', despesa.descricao)
-    despesa.categoria = data.get('categoria', despesa.categoria)
+    if 'descricao' in data:
+        despesa.descricao = data['descricao']
+    if 'valor' in data:
+        despesa.valor = float(data['valor'])
+    if 'categoria' in data:
+        despesa.categoria = data['categoria']
+    if 'recorrente' in data:
+        despesa.recorrente = data['recorrente']
+    if 'dia_vencimento' in data:
+        despesa.dia_vencimento = data['dia_vencimento']
+        
+    # Lógica de pagamento
+    if 'pago' in data:
+        if data['pago'] and not despesa.pago: # Marcar como pago
+            despesa.pago = True
+            despesa.pago_por_user_id = session.get('user_id')
+            despesa.data_pagamento = datetime.utcnow()
+        elif not data['pago'] and despesa.pago: # Desmarcar como pago
+            despesa.pago = False
+            despesa.pago_por_user_id = None
+            despesa.data_pagamento = None
+            
     db.session.commit()
     
     # Buscar nome do usuário que pagou
@@ -442,6 +522,69 @@ def api_despesa_variavel_delete(id):
     db.session.commit()
     return '', 204
 
+from flask import Blueprint, jsonify, request, session
+from app.models.finance import Receita, DespesaFixa, DespesaVariavel, ReservaEmergencia, ReservaGoal, MetaCategoria
+from app.models.core import User, Familia
+from app.extensions import db
+from datetime import datetime, timedelta
+from sqlalchemy import func, extract
+
+# bp = Blueprint('api', __name__) # This line is already present at the top of the file, so it's commented out here.
+
+def verificar_recorrencia(familia_id, mes_atual, ano_atual):
+    """
+    Verifica se existem despesas recorrentes do mês anterior que precisam ser criadas no mês atual.
+    """
+    # Determinar mês anterior
+    if mes_atual == 1:
+        mes_anterior = 12
+        ano_anterior = ano_atual - 1
+    else:
+        mes_anterior = mes_atual - 1
+        ano_anterior = ano_atual
+        
+    # Buscar despesas recorrentes do mês anterior
+    despesas_recorrentes = DespesaFixa.query.filter_by(
+        familia_id=familia_id,
+        mes=mes_anterior,
+        ano=ano_anterior,
+        recorrente=True
+    ).all()
+    
+    novas_despesas = 0
+    
+    for despesa in despesas_recorrentes:
+        # Verificar se já existe no mês atual (pela descrição e categoria, para evitar duplicatas)
+        existe = DespesaFixa.query.filter_by(
+            familia_id=familia_id,
+            mes=mes_atual,
+            ano=ano_atual,
+            descricao=despesa.descricao,
+            categoria=despesa.categoria
+        ).first()
+        
+        if not existe:
+            nova_despesa = DespesaFixa(
+                categoria=despesa.categoria,
+                descricao=despesa.descricao,
+                valor=despesa.valor,
+                mes=mes_atual,
+                ano=ano_atual,
+                recorrente=True,
+                dia_vencimento=despesa.dia_vencimento,
+                user_id=despesa.user_id, # Mantém o criador original
+                familia_id=familia_id,
+                pago=False # Começa como não paga
+            )
+            db.session.add(nova_despesa)
+            novas_despesas += 1
+            
+    if novas_despesas > 0:
+        db.session.commit()
+        print(f"✅ {novas_despesas} despesas recorrentes geradas para {mes_atual}/{ano_atual}")
+
+
+
 @bp.route('/evolucao-mensal', methods=['GET'])
 @login_required
 def evolucao_mensal():
@@ -486,15 +629,26 @@ def api_reserva():
     familia_id = session.get('familia_id')
     
     if request.method == 'GET':
-        reservas = ReservaEmergencia.query.filter_by(familia_id=familia_id).order_by(ReservaEmergencia.data.desc()).all()
-        total = db.session.query(db.func.sum(ReservaEmergencia.valor)).filter_by(familia_id=familia_id).scalar() or 0
+        goal_id = request.args.get('goal_id', type=int)
+        
+        query = ReservaEmergencia.query.filter_by(familia_id=familia_id)
+        if goal_id:
+            query = query.filter_by(goal_id=goal_id)
+        
+        reservas = query.order_by(ReservaEmergencia.data.desc()).all()
+        total = db.session.query(db.func.sum(ReservaEmergencia.valor)).filter_by(familia_id=familia_id)
+        if goal_id:
+            total = total.filter_by(goal_id=goal_id)
+        total = total.scalar() or 0
+        
         return jsonify({
             'historico': [{
                 'id': r.id,
                 'valor': r.valor,
                 'data': r.data.strftime('%Y-%m-%d'),
                 'observacao': r.observacao,
-                'usuario': User.query.get(r.user_id).nome if r.user_id else 'Sistema'
+                'usuario': User.query.get(r.user_id).nome if r.user_id else 'Sistema',
+                'goal_id': r.goal_id
             } for r in reservas],
             'total': float(total)
         })
@@ -505,7 +659,8 @@ def api_reserva():
         data=datetime.strptime(data['data'], '%Y-%m-%d'),
         observacao=data.get('observacao', ''),
         user_id=session['user_id'],
-        familia_id=familia_id
+        familia_id=familia_id,
+        goal_id=data.get('goal_id')
     )
     db.session.add(reserva)
     db.session.commit()
@@ -513,7 +668,8 @@ def api_reserva():
         'id': reserva.id,
         'valor': reserva.valor,
         'data': reserva.data.strftime('%Y-%m-%d'),
-        'observacao': reserva.observacao
+        'observacao': reserva.observacao,
+        'goal_id': reserva.goal_id
     }), 201
 
 @bp.route('/reserva-emergencia/<int:id>', methods=['PUT', 'DELETE'])
@@ -543,6 +699,95 @@ def api_reserva_detail(id):
         'data': reserva.data.strftime('%Y-%m-%d'),
         'observacao': reserva.observacao
     })
+
+@bp.route('/reserva-goals', methods=['GET', 'POST'])
+@login_required
+def api_reserva_goals():
+    familia_id = session.get('familia_id')
+    
+    if request.method == 'GET':
+        goals = ReservaGoal.query.filter_by(familia_id=familia_id).all()
+        
+        result = []
+        for goal in goals:
+            # Calcular total acumulado para este goal
+            total = db.session.query(db.func.sum(ReservaEmergencia.valor)).filter_by(
+                familia_id=familia_id,
+                goal_id=goal.id
+            ).scalar() or 0
+            
+            result.append({
+                'id': goal.id,
+                'nome': goal.nome,
+                'valor_meta': goal.valor_meta,
+                'valor_atual': float(total),
+                'percentual': round((total / goal.valor_meta * 100) if goal.valor_meta > 0 else 0, 1),
+                'cor': goal.cor,
+                'icone': goal.icone
+            })
+        
+        return jsonify(result)
+    
+    # POST - Criar novo goal
+    data = request.get_json()
+    goal = ReservaGoal(
+        nome=data['nome'],
+        valor_meta=data['valor_meta'],
+        cor=data.get('cor', '#4CAF50'),
+        icone=data.get('icone', 'fas fa-piggy-bank'),
+        familia_id=familia_id
+    )
+    db.session.add(goal)
+    db.session.commit()
+    
+    return jsonify({
+        'id': goal.id,
+        'nome': goal.nome,
+        'valor_meta': goal.valor_meta,
+        'valor_atual': 0,
+        'percentual': 0,
+        'cor': goal.cor,
+        'icone': goal.icone
+    }), 201
+
+@bp.route('/reserva-goals/<int:id>', methods=['PUT', 'DELETE'])
+@login_required
+def api_reserva_goal_detail(id):
+    goal = ReservaGoal.query.get_or_404(id)
+    
+    if goal.familia_id != session.get('familia_id'):
+        return jsonify({'error': 'Acesso negado'}), 403
+    
+    if request.method == 'DELETE':
+        # Deletar também todas as transações associadas
+        ReservaEmergencia.query.filter_by(goal_id=id).delete()
+        db.session.delete(goal)
+        db.session.commit()
+        return '', 204
+    
+    # PUT - Atualizar
+    data = request.get_json()
+    goal.nome = data.get('nome', goal.nome)
+    goal.valor_meta = data.get('valor_meta', goal.valor_meta)
+    goal.cor = data.get('cor', goal.cor)
+    goal.icone = data.get('icone', goal.icone)
+    db.session.commit()
+    
+    # Calcular total atual
+    total = db.session.query(db.func.sum(ReservaEmergencia.valor)).filter_by(
+        goal_id=goal.id
+    ).scalar() or 0
+    
+    return jsonify({
+        'id': goal.id,
+        'nome': goal.nome,
+        'valor_meta': goal.valor_meta,
+        'valor_atual': float(total),
+        'percentual': round((total / goal.valor_meta * 100) if goal.valor_meta > 0 else 0, 1),
+        'cor': goal.cor,
+        'icone': goal.icone
+    })
+
 
 @bp.route('/metas-categoria', methods=['GET', 'POST'])
 @login_required
@@ -582,6 +827,56 @@ def api_metas_categoria():
         'valor_limite': meta.valor_limite
     }), 201
 
+@bp.route('/perfil', methods=['PUT'])
+@login_required
+def api_update_perfil():
+    user = User.query.get(session['user_id'])
+    data = request.get_json()
+    
+    if 'nome' in data:
+        user.nome = data['nome']
+        session['nome'] = user.nome # Atualizar sessão
+        
+    db.session.commit()
+    return jsonify({'success': True})
+
+@bp.route('/perfil/familia', methods=['PUT'])
+@login_required
+def api_update_familia():
+    familia = Familia.query.get(session['familia_id'])
+    data = request.get_json()
+    
+    if 'nome' in data:
+        familia.nome = data['nome']
+        session['familia_nome'] = familia.nome # Atualizar sessão
+        
+    db.session.commit()
+    return jsonify({'success': True})
+
+@bp.route('/perfil/avatar', methods=['PUT'])
+@login_required
+def api_update_avatar():
+    user = User.query.get(session['user_id'])
+    data = request.get_json()
+    
+    if 'avatar' in data:
+        user.avatar = data['avatar']
+        session['avatar'] = user.avatar # Atualizar sessão
+        
+    db.session.commit()
+    return jsonify({'success': True})
+
+@bp.route('/perfil/senha', methods=['PUT'])
+@login_required
+def api_update_senha():
+    user = User.query.get(session['user_id'])
+    data = request.get_json()
+    
+    if 'senha' in data:
+        user.set_password(data['senha'])
+        
+    db.session.commit()
+    return jsonify({'success': True})
 @bp.route('/metas-categoria/<int:id>', methods=['PUT', 'DELETE'])
 @login_required
 def api_meta_categoria_detail(id):

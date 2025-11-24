@@ -130,8 +130,8 @@
                 <p class="text-2xl md:text-3xl font-bold" id="reserva">R$ 0,00</p>
             </div>
             <div class="sm:text-right">
-                <p class="text-white/80 text-sm font-medium">🎯 Meta</p>
-                <p class="text-xl md:text-2xl font-bold">R$ {{ "%.2f"|format(meta_reserva) }}</p>
+                <p class="text-white/80 text-sm font-medium">🎯 Meta Total</p>
+                <p class="text-xl md:text-2xl font-bold" id="meta-reserva-display">R$ 0,00</p>
             </div>
         </div>
         <div class="w-full bg-white/20 backdrop-blur-sm rounded-full h-6 overflow-hidden">
@@ -201,7 +201,6 @@
     let despesasChart = null;
     let receitasDespesasChart = null;
     let evolucaoChart = null;
-    let metaReserva = {{ meta_reserva|default (0) | tojson }};
 
     function formatMoney(value) {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
@@ -224,9 +223,12 @@
         document.getElementById('despesas-fixas').textContent = formatMoney(data.despesas_fixas);
         document.getElementById('despesas-variaveis').textContent = formatMoney(data.despesas_variaveis);
         document.getElementById('saldo').textContent = formatMoney(data.saldo_disponivel);
-        document.getElementById('reserva').textContent = formatMoney(data.reserva_emergencia);
 
-        const percentual = metaReserva > 0 ? (data.reserva_emergencia / metaReserva * 100).toFixed(1) : 0;
+        // Reserva
+        document.getElementById('reserva').textContent = formatMoney(data.reserva_emergencia_total);
+        document.getElementById('meta-reserva-display').textContent = formatMoney(data.meta_reserva_total);
+
+        const percentual = data.meta_reserva_total > 0 ? (data.reserva_emergencia_total / data.meta_reserva_total * 100).toFixed(1) : 0;
         document.getElementById('percentual').textContent = percentual;
         document.getElementById('progress-bar').style.width = Math.min(percentual, 100) + '%';
 
