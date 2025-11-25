@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  web:
+    build: .
+    container_name: financeiro-app
+    ports:
+      - "5000:5000"
+    volumes:
+      # Persistir banco de dados
+      - ./instance:/app/instance
+      # Desenvolvimento: hot reload
+      - .:/app
+    environment:
+      - FLASK_ENV=production
+      - SECRET_KEY=${SECRET_KEY:-sua-chave-secreta-aqui}
+    restart: unless-stopped
+    networks:
+      - financeiro-network
+
+networks:
+  financeiro-network:
+    driver: bridge

@@ -2,31 +2,58 @@
 __pycache__/
 *.py[cod]
 *$py.class
+*.so
+.Python
 
 # Virtual Environment
 venv/
 env/
-.env
+ENV/
+.venv
 
 # Flask
-instance/
+instance/*.db
+instance/*.sqlite3
 .webassets-cache
 
-# Database
-*.db
-*.sqlite3
+# Environment variables
+.env
+.env.local
 
 # IDEs
 .vscode/
 .idea/
+*.swp
+*.swo
+*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Local Data (CSV files that look like data)
-*.csv
+# Logs
+*.log
 
-# Documentation
+# Database backups
+*.db.backup
+*.sqlite3.backup
+
+# Temporary files
+*.tmp
+*.temp
+
+# Debug scripts (optional - remova se quiser versionar)
+debug_*.py
+verify_*.py
+
+# Documentation (manter apenas README)
 *.md
 !README.md
+!COMECE_AQUI.md
+!deploy/README_DEPLOY.txt
+
+# CSV data files
+*.csv
+
+# Migration scripts (após executar)
+migrate_*.py

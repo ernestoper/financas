@@ -1,0 +1,18 @@
+# Exemplo: Adicionar ao seu tunnel existente em mangueia.com
+# Edite seu arquivo ~/.cloudflared/config.yml e adicione a nova rota
+
+tunnel: SEU_TUNNEL_ID_EXISTENTE
+credentials-file: /home/pi/.cloudflared/SEU_TUNNEL_ID.json
+
+ingress:
+  # Sua aplicação existente
+  - hostname: eye-tracking-poc.mangueia.com
+    service: http://localhost:PORTA_DA_APLICACAO_EXISTENTE
+  
+  # ADICIONE esta nova rota para a aplicação financeira
+  # Escolha o subdomínio que preferir:
+  - hostname: financas.mangueia.com
+    service: http://localhost:5000
+  
+  # Rota padrão (sempre a última)
+  - service: http_status:404

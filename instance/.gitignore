@@ -1,0 +1,6 @@
+# Não versionar o banco de dados de produção
+*.db
+*.sqlite3
+
+# Manter estrutura do diretório
+!.gitkeep
