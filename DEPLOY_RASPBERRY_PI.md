@@ -69,8 +69,23 @@ Este comando cria automaticamente o registro DNS CNAME no Cloudflare.
 
 Você **NÃO** precisa criar um novo tunnel. Vamos apenas adicionar uma rota ao existente.
 
+### 3.1. Configurar Credenciais (Importante!) 🔑
+
+O serviço do sistema precisa acessar o arquivo de credenciais. Vamos movê-lo para a pasta correta:
+
 ```bash
-# Editar configuração do tunnel (Use sudo pois é arquivo do sistema)
+# 1. Copiar arquivo de credenciais (ajuste o nome do arquivo .json se necessário)
+sudo cp ~/.cloudflared/27f3f4da-f61a-4e9a-bdbf-44eb21c6c087.json /etc/cloudflared/cert.json
+
+# 2. Ajustar permissões de segurança
+sudo chown root:root /etc/cloudflared/cert.json
+sudo chmod 600 /etc/cloudflared/cert.json
+```
+
+### 3.2. Editar Configuração do Tunnel
+
+```bash
+# Editar configuração do tunnel
 sudo nano /etc/cloudflared/config.yml
 ```
 
@@ -78,7 +93,7 @@ Adicione a nova rota para a aplicação financeira (porta 5001):
 
 ```yaml
 tunnel: 27f3f4da-f61a-4e9a-bdbf-44eb21c6c087
-credentials-file: /home/ernesto/.cloudflared/27f3f4da-f61a-4e9a-bdbf-44eb21c6c087.json
+credentials-file: /etc/cloudflared/cert.json
 
 ingress:
   # Aplicação existente (NÃO ALTERAR)

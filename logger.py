@@ -10,8 +10,12 @@ def setup_logger(app):
     """Configura o sistema de logs"""
     
     # Criar diretório de logs se não existir
-    if not os.path.exists('logs'):
-        os.makedirs('logs')
+    try:
+        if not os.path.exists('logs'):
+            os.makedirs('logs')
+    except PermissionError:
+        # Se não tiver permissão (Docker), usar /tmp
+        app.config['LOG_FILE'] = '/tmp/app.log'
     
     # Configurar nível de log
     log_level = getattr(logging, app.config['LOG_LEVEL'].upper(), logging.INFO)

@@ -4,9 +4,7 @@ from flask import session, redirect, url_for
 def login_required(f):
     @wraps(f)
     def decorated_function(*args, **kwargs):
-        print(f"DEBUG: Checking session for {f.__name__}. Session keys: {list(session.keys())}")
         if 'user_id' not in session:
-            print("DEBUG: user_id not in session. Redirecting to login.")
             return redirect(url_for('auth.login'))
         return f(*args, **kwargs)
     return decorated_function
