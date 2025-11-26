@@ -2,6 +2,7 @@ from flask import Flask
 import os
 from dotenv import load_dotenv
 from app.extensions import db
+from werkzeug.middleware.proxy_fix import ProxyFix
 
 # Carregar variáveis de ambiente do arquivo .env
 load_dotenv()
@@ -20,6 +21,14 @@ def create_app(config_object=None):
     
     # Inicializar extensões
     db.init_app(app)
+    
+    # Configurar ProxyFix para Cloudflare/Reverse Proxy
+    # x_for=1: confia no primeiro X-Forwarded-For
+    # x_proto=1: confia no primeiro X-Forwarded-Proto
+    # x_host=1: confia no primeiro X-Forwarded-Host
+    # x_port=1: confia no primeiro X-Forwarded-Port
+    # x_prefix=1: confia no primeiro X-Forwarded-Prefix
+    app.wsgi_app = ProxyFix(app.wsgi_app, x_for=1, x_proto=1, x_host=1, x_port=1, x_prefix=1)
     
     # Configurar logs (opcional, só se logger.py existir)
     try:

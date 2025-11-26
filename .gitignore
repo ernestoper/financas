@@ -40,6 +40,6 @@ backups/
 *.backup
 
 # Documentação desnecessária (manter apenas README.md e DEPLOY_RASPBERRY_PI.md)
-*.md
-#!README.md
-#!DEPLOY_RASPBERRY_PI.md
+# *.md
+# !README.md
+# !DEPLOY_RASPBERRY_PI.md
