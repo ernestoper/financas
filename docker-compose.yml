@@ -1,22 +1,32 @@
-version: '3.8'
-
 services:
+  # Aplicação Financeira
   web:
-    build: .
+    build:
+      context: .
+      dockerfile: Dockerfile
     container_name: financeiro-app
     ports:
-      - "5000:5000"
+      - "5001:5001"
+    environment:
+      - FLASK_ENV=production
+      - FLASK_APP=run.py
+      - SECRET_KEY=${SECRET_KEY:-dev-secret-key-change-in-production}
+      - DATABASE_URL=sqlite:////app/instance/financas.db
+      - PYTHONUNBUFFERED=1
     volumes:
       # Persistir banco de dados
       - ./instance:/app/instance
-      # Desenvolvimento: hot reload
-      - .:/app
-    environment:
-      - FLASK_ENV=production
-      - SECRET_KEY=${SECRET_KEY:-sua-chave-secreta-aqui}
+      # Desenvolvimento: hot reload (comentar em produção)
+      # - .:/app
     restart: unless-stopped
     networks:
       - financeiro-network
+    healthcheck:
+      test: [ "CMD", "python", "-c", "import urllib.request; urllib.request.urlopen('http://localhost:5001').read()" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 40s
 
 networks:
   financeiro-network:

@@ -33,7 +33,7 @@
     class="hidden fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-50 p-4">
     <div
         class="bg-white/95 backdrop-blur-xl p-6 md:p-8 rounded-3xl shadow-2xl max-w-md w-full border border-gray-200/50">
-        <h3
+        <h3 id="modalTitulo"
             class="text-xl md:text-2xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent mb-4">
             🎯 Nova Meta
         </h3>
@@ -62,7 +62,7 @@
             </div>
 
             <div class="flex gap-4">
-                <button type="submit"
+                <button type="submit" id="btnSalvar"
                     class="flex-1 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-700 hover:to-indigo-700 text-white font-bold py-3 rounded-xl shadow-lg transform hover:scale-105 transition-all">
                     ✓ Salvar
                 </button>
@@ -78,17 +78,46 @@
 
 {% block scripts %}
 <script>
+    let metaEditandoId = null;
+
     function formatMoney(value) {
         return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
     }
 
-    function abrirModalMeta() {
-        document.getElementById('modal-meta').classList.remove('hidden');
+    function abrirModalMeta(meta = null) {
+        const modal = document.getElementById('modal-meta');
+        const form = document.getElementById('metaForm');
+        const titulo = document.getElementById('modalTitulo');
+        const btnSalvar = document.getElementById('btnSalvar');
+        const selectCategoria = form.querySelector('select[name="categoria"]');
+
+        modal.classList.remove('hidden');
+
+        if (meta) {
+            metaEditandoId = meta.id;
+            titulo.textContent = '✏️ Editar Meta';
+            btnSalvar.textContent = '✓ Atualizar';
+
+            selectCategoria.value = meta.categoria;
+            selectCategoria.disabled = true; // Não permite mudar categoria na edição
+
+            form.querySelector('input[name="valor_limite"]').value = meta.valor_limite;
+        } else {
+            metaEditandoId = null;
+            titulo.textContent = '🎯 Nova Meta';
+            btnSalvar.textContent = '✓ Salvar';
+
+            selectCategoria.value = "";
+            selectCategoria.disabled = false;
+
+            form.reset();
+        }
     }
 
     function fecharModalMeta() {
         document.getElementById('modal-meta').classList.add('hidden');
         document.getElementById('metaForm').reset();
+        metaEditandoId = null;
     }
 
     async function carregarMetas() {
@@ -110,6 +139,9 @@
         }
 
         metas.forEach(meta => {
+            // Escapar aspas para passar o objeto no onclick
+            const metaJson = JSON.stringify(meta).replace(/"/g, '&quot;');
+
             container.innerHTML += `
                 <div class="flex items-center justify-between p-4 bg-white rounded-xl border border-gray-100 shadow-sm hover:shadow-md transition-all group">
                     <div class="flex items-center gap-4">
@@ -121,12 +153,18 @@
                             <p class="text-sm text-gray-500">Limite mensal</p>
                         </div>
                     </div>
-                    <div class="text-right">
+                    <div class="text-right flex flex-col items-end gap-1">
                         <div class="text-lg font-bold text-gray-800">${formatMoney(meta.valor_limite)}</div>
-                        <button onclick="deletarMeta(${meta.id})" 
-                            class="text-red-400 hover:text-red-600 text-sm hover:underline opacity-0 group-hover:opacity-100 transition-opacity">
-                            Excluir
-                        </button>
+                        <div class="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
+                            <button onclick="abrirModalMeta(${metaJson})" 
+                                class="text-blue-500 hover:text-blue-700 text-sm hover:underline">
+                                Editar
+                            </button>
+                            <button onclick="deletarMeta(${meta.id})" 
+                                class="text-red-400 hover:text-red-600 text-sm hover:underline">
+                                Excluir
+                            </button>
+                        </div>
                     </div>
                 </div>
             `;
@@ -139,13 +177,26 @@
         const formData = new FormData(form);
 
         const data = {
-            categoria: formData.get('categoria'),
+            categoria: formData.get('categoria'), // Mesmo disabled, precisamos enviar se for novo, mas se for edit, a API ignora ou valida
             valor_limite: parseFloat(formData.get('valor_limite'))
         };
 
+        // Se o select estiver disabled, o FormData não pega o valor. Pegamos manualmente.
+        if (metaEditandoId) {
+            data.categoria = form.querySelector('select[name="categoria"]').value;
+        }
+
         try {
-            const response = await fetch('/api/metas-categoria', {
-                method: 'POST',
+            let url = '/api/metas-categoria';
+            let method = 'POST';
+
+            if (metaEditandoId) {
+                url = `/api/metas-categoria/${metaEditandoId}`;
+                method = 'PUT';
+            }
+
+            const response = await fetch(url, {
+                method: method,
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify(data)
             });
@@ -153,12 +204,13 @@
             if (response.ok) {
                 fecharModalMeta();
                 carregarMetas();
-                showToast('Meta criada com sucesso!', 'success');
+                showToast(metaEditandoId ? 'Meta atualizada!' : 'Meta criada com sucesso!', 'success');
             } else {
                 const error = await response.json();
                 showToast(error.error || 'Erro ao salvar meta', 'error');
             }
         } catch (e) {
+            console.error(e);
             showToast('Erro de conexão', 'error');
         }
     }

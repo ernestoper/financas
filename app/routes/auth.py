@@ -88,6 +88,7 @@ def login():
                 familia = Familia.query.get(user.familia_id)
                 session['codigo_convite'] = familia.codigo_convite
             
+            print(f"DEBUG: Login successful for {username}. Session keys set: {list(session.keys())}")
             return redirect(url_for('main.dashboard'))
         
         return render_template('login.html', error='Usuário ou senha inválidos')

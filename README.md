@@ -75,7 +75,7 @@ cp .env.example .env
 docker-compose up -d
 
 # 4. Acesse a aplicação
-# http://localhost:5000
+# http://localhost:5001
 ```
 
 ## 💻 Instalação Manual
@@ -102,7 +102,7 @@ cp .env.example .env
 python run.py
 
 # 6. Acesse no navegador
-# http://localhost:5000
+# http://localhost:5001
 ```
 
 ## 🔧 Comandos Úteis
@@ -213,7 +213,7 @@ planilha-financeira/
 ## 🎯 Como Usar
 
 ### Primeiro Acesso
-1. Acesse `http://localhost:5000`
+1. Acesse `http://localhost:5001`
 2. Clique em "Registrar" para criar uma conta
 3. Preencha os dados e crie sua família
 4. Faça login com suas credenciais
@@ -352,7 +352,7 @@ credentials-file: /home/pi/.cloudflared/SEU_TUNNEL_ID.json
 
 ingress:
   - hostname: financas.seudominio.com
-    service: http://localhost:5000
+    service: http://localhost:5001
   - service: http_status:404
 ```
 
@@ -514,7 +514,7 @@ nano .env  # Configure SECRET_KEY
 docker-compose up -d
 
 # 4. Configure firewall (opcional)
-sudo ufw allow 5000
+sudo ufw allow 5001
 ```
 
 ### Considerações de Produção

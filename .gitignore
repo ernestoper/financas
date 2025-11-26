@@ -4,56 +4,42 @@ __pycache__/
 *$py.class
 *.so
 .Python
-
-# Virtual Environment
 venv/
 env/
 ENV/
-.venv
 
 # Flask
-instance/*.db
-instance/*.sqlite3
+instance/
 .webassets-cache
 
-# Environment variables
+# Banco de dados
+*.db
+*.sqlite
+*.sqlite3
+
+# Logs
+logs/
+*.log
+
+# Ambiente
 .env
 .env.local
 
-# IDEs
+# IDE
 .vscode/
 .idea/
 *.swp
 *.swo
-*~
 
 # OS
 .DS_Store
 Thumbs.db
 
-# Logs
-*.log
+# Backups
+backups/
+*.backup
 
-# Database backups
-*.db.backup
-*.sqlite3.backup
-
-# Temporary files
-*.tmp
-*.temp
-
-# Debug scripts (optional - remova se quiser versionar)
-debug_*.py
-verify_*.py
-
-# Documentation (manter apenas README)
+# Documentação desnecessária (manter apenas README.md e DEPLOY_RASPBERRY_PI.md)
 *.md
-!README.md
-!COMECE_AQUI.md
-!deploy/README_DEPLOY.txt
-
-# CSV data files
-*.csv
-
-# Migration scripts (após executar)
-migrate_*.py
+#!README.md
+#!DEPLOY_RASPBERRY_PI.md
