@@ -86,25 +86,52 @@
 
             <!-- Mobile Navigation -->
             <div id="mobile-menu" class="hidden md:hidden pb-4 space-y-2">
-                <a href="/dashboard" class="block hover:bg-blue-700 px-3 py-2 rounded">Dashboard</a>
-                <a href="/receitas" class="block hover:bg-blue-700 px-3 py-2 rounded">Receitas</a>
-                <a href="/despesas-fixas" class="block hover:bg-blue-700 px-3 py-2 rounded">Despesas Fixas</a>
-                <a href="/despesas-variaveis" class="block hover:bg-blue-700 px-3 py-2 rounded">Gastos Diários</a>
-                <a href="/reserva" class="block hover:bg-blue-700 px-3 py-2 rounded">Reserva</a>
-                <a href="/metas" class="block hover:bg-blue-700 px-3 py-2 rounded">Metas</a>
-                <a href="/planos" class="block hover:bg-blue-700 px-3 py-2 rounded">💎 Planos</a>
+                <a href="/dashboard"
+                    class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    📊 Dashboard
+                </a>
+                <a href="/receitas"
+                    class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    💰 Receitas
+                </a>
+                <a href="/despesas-fixas"
+                    class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    📌 Despesas Fixas
+                </a>
+                <a href="/despesas-variaveis"
+                    class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    🛒 Gastos Diários
+                </a>
+                <a href="/reserva" class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    🏦 Reserva
+                </a>
+                <a href="/metas" class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    🎯 Metas
+                </a>
+                <a href="/planos" class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                    💎 Planos
+                </a>
                 {% if session.is_admin %}
-                <a href="/admin" class="block hover:bg-blue-700 px-3 py-2 rounded bg-red-500">🔐 Admin</a>
+                <a href="/admin"
+                    class="block bg-gradient-to-r from-red-500 to-pink-500 hover:from-red-600 hover:to-pink-600 px-4 py-3 rounded-lg transition-all shadow-lg">
+                    🔐 Admin
+                </a>
                 {% endif %}
-                <div class="border-t border-blue-500 pt-2 mt-2">
-                    <p class="px-3 py-2 text-sm">Olá, {{ session.nome }}!</p>
+                <div class="border-t border-white/30 pt-3 mt-3 space-y-2">
+                    <p class="px-4 py-2 text-sm font-medium">Olá, {{ session.nome }}! 👋</p>
+                    <a href="/perfil"
+                        class="block hover:bg-white/20 backdrop-blur-sm px-4 py-3 rounded-lg transition-all">
+                        👤 Meu Perfil
+                    </a>
                     {% if session.codigo_convite %}
                     <button onclick="mostrarCodigo()"
-                        class="w-full text-left bg-purple-500 hover:bg-purple-600 px-3 py-2 rounded mb-2">
-                        Código Convite
+                        class="w-full text-left bg-purple-500/90 hover:bg-purple-600 px-4 py-3 rounded-lg transition-all">
+                        🎫 Código Convite
                     </button>
                     {% endif %}
-                    <a href="/logout" class="block bg-red-500 hover:bg-red-600 px-3 py-2 rounded">Sair</a>
+                    <a href="/logout" class="block bg-red-500/90 hover:bg-red-600 px-4 py-3 rounded-lg transition-all">
+                        🚪 Sair
+                    </a>
                 </div>
             </div>
         </div>

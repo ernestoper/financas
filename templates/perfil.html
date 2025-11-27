@@ -43,7 +43,8 @@
                 <form id="form-perfil" class="space-y-4">
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Nome de Exibição</label>
-                        <input type="text" name="nome" value="{{ session.nome }}" required
+                        <input type="text" name="nome" value="{{ session.nome }}" required autocomplete="name"
+                            inputmode="text"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200 transition-all">
                     </div>
                     <button type="submit"
@@ -62,6 +63,7 @@
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Nome da Família</label>
                         <input type="text" name="familia_nome" value="{{ session.familia_nome }}" required
+                            autocomplete="off" inputmode="text"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-green-500 focus:ring-2 focus:ring-green-200 transition-all">
                     </div>
                     <div class="flex items-center justify-between">
@@ -85,11 +87,13 @@
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Nova Senha</label>
                         <input type="password" name="senha" placeholder="••••••••" required minlength="6"
+                            autocomplete="new-password"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
                     </div>
                     <div>
                         <label class="block text-gray-700 text-sm font-bold mb-2">Confirmar Senha</label>
                         <input type="password" name="confirmar_senha" placeholder="••••••••" required minlength="6"
+                            autocomplete="new-password"
                             class="w-full px-4 py-3 border-2 border-gray-200 rounded-xl focus:outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-200 transition-all">
                     </div>
                     <button type="submit"
@@ -182,6 +186,8 @@
         const formData = new FormData(e.target);
         const nome = formData.get('familia_nome');
 
+        console.log('Enviando atualização de família:', nome);
+
         try {
             const response = await fetch('/api/perfil/familia', {
                 method: 'PUT',
@@ -189,13 +195,18 @@
                 body: JSON.stringify({ nome })
             });
 
+            console.log('Resposta família:', response.status, response.ok);
+
             if (response.ok) {
                 showToast('Nome da família atualizado!', 'success');
                 setTimeout(() => window.location.reload(), 1000);
             } else {
+                const error = await response.text();
+                console.error('Erro família:', error);
                 showToast('Erro ao atualizar família', 'error');
             }
         } catch (error) {
+            console.error('Erro de conexão família:', error);
             showToast('Erro de conexão', 'error');
         }
     });
@@ -205,6 +216,8 @@
         const formData = new FormData(e.target);
         const senha = formData.get('senha');
         const confirmar = formData.get('confirmar_senha');
+
+        console.log('Tentando alterar senha');
 
         if (senha !== confirmar) {
             showToast('As senhas não coincidem!', 'error');
@@ -218,13 +231,18 @@
                 body: JSON.stringify({ senha })
             });
 
+            console.log('Resposta senha:', response.status, response.ok);
+
             if (response.ok) {
                 showToast('Senha alterada com sucesso!', 'success');
                 e.target.reset();
             } else {
+                const error = await response.text();
+                console.error('Erro senha:', error);
                 showToast('Erro ao alterar senha', 'error');
             }
         } catch (error) {
+            console.error('Erro de conexão senha:', error);
             showToast('Erro de conexão', 'error');
         }
     });
